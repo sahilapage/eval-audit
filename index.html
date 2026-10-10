@@ -152,7 +152,7 @@ table.check th { font: 500 12px var(--mono); letter-spacing: .6px; text-transfor
 table.check td { padding: 12px 16px 12px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
 table.check td:last-child { font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); min-width: 220px; padding-right: 0; }
 .takeaways { list-style: none; counter-reset: t; padding: 0; margin: 26px 0 0; display: grid; gap: 14px; }
-.takeaways li { counter-increment: t; display: grid; grid-template-columns: 36px 1fr; font-size: 19px; line-height: 1.6; }
+.takeaways li { counter-increment: t; display: grid; grid-template-columns: 46px 1fr; font-size: 19px; line-height: 1.6; }
 .takeaways li::before { content: "(" counter(t, lower-roman) ")"; font-family: var(--mono); font-size: 13px; color: var(--ink-3); padding-top: 4px; }
 
 .spec { display: grid; grid-template-columns: 170px minmax(0, 1fr); border-top: 1px solid var(--ink); margin: 0 0 30px; }
@@ -204,6 +204,7 @@ table.check td:last-child { font-family: var(--mono); font-size: 13.5px; color: 
     <li><a href="#stack">The stack</a></li>
     <li><a href="#resolution">Resolution</a></li>
     <li><a href="#checklist">Checklist</a></li>
+    <li><a href="#conclusion">Conclusion</a></li>
     <li><a href="#method">Method</a></li>
   </ul>
 </nav>
@@ -406,6 +407,15 @@ table.check td:last-child { font-family: var(--mono); font-size: 13.5px; color: 
     <li><span>Report chunk length, settling steps, simulator version and renderer. Here they shifted scores by 3–14 points on a suite and 30 on one task.</span></li>
     <li><span>One binary-success evaluation does not reliably separate methods closer than 2–7 points. Report multi-seed means and per-scene outcomes.</span></li>
   </ol>
+
+  <h2 class="tagline" id="conclusion">Conclusion</h2>
+  <div class="section">
+    <p>A simulated success rate measures a policy together with the infrastructure that ran it. In LIBERO the clearest case is the reset. The seed moves furniture that the stored initial states never recorded, so a policy that draws no random numbers succeeds or fails on the same scene depending only on the seed. We traced that link causally, down to bit-identical physics, and built a switch that pins the layout.</p>
+    <p>Pinning made scores exactly repeatable, and it showed that repeatable is not the same as comparable. Each pinned layout, harness, machine or renderer is a fixed offset of unknown sign, and the same pattern runs through the rest of the stack and appears on SimplerEnv too. So compare methods under identical settings or average over several, report the settings in the checklist with every score, and treat gaps below 2–7 points from one binary-success evaluation as unresolved.</p>
+  </div>
+  <dl class="spec">
+    <dt>Limitations</dt><dd>Most results use LIBERO and LeRobot's harness. Several secondary effects rest on one cell each, SimplerEnv on two policies, and nothing here ran on a real robot. Two observations remain unexplained: a 14-scene change on the RTX 3060 across days, and a first-frame divergence under determinism. A per-episode policy seed is untested.</dd>
+  </dl>
 
   <h2 class="tagline" id="method">Method</h2>
   <p class="counts"><span><b>521</b> evaluations</span><span><b>~53,600</b> episodes</span><span><b>7</b> policies from 5 groups</span><span><b>2</b> simulators</span><span><b>2</b> machines</span></p>
