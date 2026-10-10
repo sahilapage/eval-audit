@@ -413,9 +413,6 @@ table.check td:last-child { font-family: var(--mono); font-size: 13.5px; color: 
     <p>A simulated success rate measures a policy together with the infrastructure that ran it. In LIBERO the clearest case is the reset. The seed moves furniture that the stored initial states never recorded, so a policy that draws no random numbers succeeds or fails on the same scene depending only on the seed. We traced that link causally, down to bit-identical physics, and built a switch that pins the layout.</p>
     <p>Pinning made scores exactly repeatable, and it showed that repeatable is not the same as comparable. Each pinned layout, harness, machine or renderer is a fixed offset of unknown sign, and the same pattern runs through the rest of the stack and appears on SimplerEnv too. So compare methods under identical settings or average over several, report the settings in the checklist with every score, and treat gaps below 2–7 points from one binary-success evaluation as unresolved.</p>
   </div>
-  <dl class="spec">
-    <dt>Limitations</dt><dd>Most results use LIBERO and LeRobot's harness. Several secondary effects rest on one cell each, SimplerEnv on two policies, and nothing here ran on a real robot. Two observations remain unexplained: a 14-scene change on the RTX 3060 across days, and a first-frame divergence under determinism. A per-episode policy seed is untested.</dd>
-  </dl>
 
   <h2 class="tagline" id="method">Method</h2>
   <p class="counts"><span><b>521</b> evaluations</span><span><b>~53,600</b> episodes</span><span><b>7</b> policies from 5 groups</span><span><b>2</b> simulators</span><span><b>2</b> machines</span></p>
