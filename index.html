@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta property="og:title" content="the seed moved the microwave">
-<meta property="og:description" content="what 521 evaluations of robot policies in simulation taught us about where a success rate comes from.">
+<meta property="og:description" content="what 521 evaluations of robot policies in simulation taught me about where a success rate comes from.">
 <meta property="og:image" content="https://sahilapage.github.io/eval-audit/assets/first_s1000.png">
 <meta property="og:url" content="https://sahilapage.github.io/eval-audit/">
 <meta name="twitter:card" content="summary_large_image">
 <title>The seed moved the microwave</title>
-<meta name="description" content="What 521 evaluations of robot policies in simulation taught us about where a success rate comes from.">
+<meta name="description" content="What 521 evaluations of robot policies in simulation taught me about where a success rate comes from.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/charis-sil@5.3.0/400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/charis-sil@5.3.0/700.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/charis-sil@5.3.0/400-italic.css">
@@ -155,14 +155,14 @@ footer a { color: var(--muted); }
 <main id="story">
 <article>
 <h1>the seed moved the microwave</h1>
-<p class="dek">what 521 evaluations of robot policies in simulation taught us about where a success rate comes from.</p>
+<p class="dek">what 521 evaluations of robot policies in simulation taught me about where a success rate comes from.</p>
 <p class="byline">sahil apage · october 2026</p>
 
 <div class="row opening">
   <div class="prose">
-    <p>this started with a boring check. we had π0.5 running on <a href="https://libero-project.github.io" title="LIBERO — libero-project.github.io">LIBERO</a> through <a href="https://github.com/huggingface/lerobot" title="LeRobot — github.com">LeRobot</a>, and before comparing it with anything else we ran the exact same command five times, just to see how much the number moves on its own. it came back 87, 90, 87, 87 and 90 percent.</p>
-    <p>same checkpoint, same seed, same GPU, same command. three points is about the size of the gaps people use to rank policies on this benchmark, so we kept pulling on the thread. it took 521 full evaluations (about 53,600 episodes), seven policies, two simulators and two machines before we felt we understood where these numbers come from.</p>
-    <p>this post walks through what we found, with the actual rollout videos. none of it needs a robot, just a GPU and a lot of patience.</p>
+    <p>this started with a boring check. i had π0.5 running on <a href="https://libero-project.github.io" title="LIBERO — libero-project.github.io">LIBERO</a> through <a href="https://github.com/huggingface/lerobot" title="LeRobot — github.com">LeRobot</a>, and before comparing it with anything else i ran the exact same command five times, just to see how much the number moves on its own. it came back 87, 90, 87, 87 and 90 percent.</p>
+    <p>same checkpoint, same seed, same GPU, same command. three points is about the size of the gaps people use to rank policies on this benchmark, so i kept pulling on the thread. it took 521 full evaluations (about 53,600 episodes), seven policies, two simulators and two machines before i felt i understood where these numbers come from.</p>
+    <p>this post walks through what i found, with the actual rollout videos. none of it needs a robot, just a GPU and a lot of patience.</p>
   </div>
   <figure class="side">
     <div class="clips c2" data-group>
@@ -178,7 +178,7 @@ footer a { color: var(--muted); }
 <div class="row">
   <div class="prose">
     <p>the first suspect was the GPU. by default LeRobot lets cuDNN time a few kernels when it starts and keep whichever is fastest, and some GPU kernels add numbers up in whatever order their threads happen to finish. neither matters much in training. in a closed loop it does: the last digit of an action changes, the arm ends up a hair somewhere else, the next camera frame is a hair different, and a few hundred steps later the gripper closes a few millimetres to the left.</p>
-    <p>between any two of our five runs, 7 to 15 of the 100 episodes changed outcome. switching on deterministic kernels removed that completely. π0.5 scored 91% in all five runs, with not one episode different between any pair, and π0 behaved the same way. SmolVLA happened to repeat exactly even without the switch, and π0-FAST kept one scene that flips no matter what.</p>
+    <p>between any two of my five runs, 7 to 15 of the 100 episodes changed outcome. switching on deterministic kernels removed that completely. π0.5 scored 91% in all five runs, with not one episode different between any pair, and π0 behaved the same way. SmolVLA happened to repeat exactly even without the switch, and π0-FAST kept one scene that flips no matter what.</p>
     <p>notice that 91 isn't a better score. without the switch π0.5 averaged 88.2%. determinism freezes one particular draw of the noise, so the number becomes repeatable, but it's still one sample.</p>
   </div>
   <figure class="side">
@@ -188,8 +188,8 @@ footer a { color: var(--muted); }
 </div>
 
 <h2 id="seed">the seed moved the microwave</h2>
-<p>re-runs were the easy part. the stranger thing showed up when we changed the seed.</p>
-<p>π0-FAST is a handy policy for this because it decodes greedily. given the same images it produces the same actions, with no sampling anywhere. we took one stored scene from LIBERO-Long, “put the yellow and white mug in the microwave and close it”, and ran it under seven evaluation seeds. nothing else changed.</p>
+<p>re-runs were the easy part. the stranger thing showed up when i changed the seed.</p>
+<p>π0-FAST is a handy policy for this because it decodes greedily. given the same images it produces the same actions, with no sampling anywhere. i took one stored scene from LIBERO-Long, “put the yellow and white mug in the microwave and close it”, and ran it under seven evaluation seeds. nothing else changed.</p>
 <figure class="wide">
   <div class="clips c7" data-group>
     <div class="tile"><video muted playsinline preload="metadata" poster="assets/seed1000.jpg" aria-label="seed 1000"><source src="assets/seed1000.mp4" type="video/mp4"></video><span class="tag">seed 1000</span><span class="res" data-out="0">failure</span></div>
@@ -207,7 +207,7 @@ footer a { color: var(--muted); }
 <div class="row row-diff">
   <div class="prose">
     <p>if the policy has no randomness and the scene comes from a file, what is the seed changing?</p>
-    <p>it took us a while to see it. drag the divider across the microwave in the two first frames: it isn't in the same place.</p>
+    <p>it took me a while to see it. drag the divider across the microwave in the two first frames: it isn't in the same place.</p>
     <p>LIBERO's initial-state files store the position and velocity of every joint in the scene: the robot, the mug, the hinges of doors and drawers. the furniture itself (cabinets, stoves, the microwave, the wine rack) is fixed to the table and has no joint. on every hard reset LIBERO places it again with the seeded random generator, and the stored state has no slot to put it back.</p>
     <p>so the seed moves the furniture, by up to 2.5 cm and typically 1.3 to 1.6 cm. that sounds small, but it's a lot when the task is to catch the edge of a microwave door.</p>
   </div>
@@ -234,21 +234,21 @@ footer a { color: var(--muted); }
 </figure>
 
 <h2 id="proof">checking that it really is the furniture</h2>
-<p>one policy lining up with one explanation isn't proof, so we tried to break the explanation three ways.</p>
+<p>one policy lining up with one explanation isn't proof, so i tried to break the explanation three ways.</p>
 <ul class="tests">
-  <li><b>no policy at all.</b> we replayed fixed action sequences from one stored state under two seeds. five of six diverged, each one at the moment the arm touched a displaced fixture.</li>
+  <li><b>no policy at all.</b> i replayed fixed action sequences from one stored state under two seeds. five of six diverged, each one at the moment the arm touched a displaced fixture.</li>
   <li><b>swap the furniture.</b> copying one seed's fixture poses into the other seed's model made five of five runs bit-identical again.</li>
   <li><b>human demonstrations.</b> replayed under 20 seeds, 26 of LIBERO's 50 recorded demos changed outcome in a task with a moving cabinet. in a task where the seed moves nothing, none did.</li>
 </ul>
-<p>we weren't the first to bump into this. a version of it was reported on the OpenVLA repo (<a href="https://github.com/openvla/openvla/issues/342" title="openvla#342 — github.com">issue #342</a>), where the fixtures weren't restored when one environment was reused across episodes. what we added is tracing it all the way down to the physics and measuring what it does to scores.</p>
+<p>i wasn't the first to bump into this. a version of it was reported on the OpenVLA repo (<a href="https://github.com/openvla/openvla/issues/342" title="openvla#342 — github.com">issue #342</a>), where the fixtures weren't restored when one environment was reused across episodes. what i added is tracing it all the way down to the physics and measuring what it does to scores.</p>
 <div class="aside"><p>one twist: LIBERO's own demonstrations were recorded with the furniture in slightly different places too, about as spread out as the seed makes it. so the evaluation scenes aren't out of distribution. the files that are supposed to fix a scene just don't fix all of it.</p></div>
 
 <h2 id="pin">pinning the furniture</h2>
 <div class="row">
   <div class="prose">
-    <p>the fix is small. we added an opt-in switch that ties the furniture placement to the scene's index instead of the seed, so a stored scene really is one scene.</p>
+    <p>the fix is small. i added an opt-in switch that ties the furniture placement to the scene's index instead of the seed, so a stored scene really is one scene.</p>
     <p>with it, π0.5 scored 90.0% under six different seeds, and no episode changed between any two runs. without it, the same six seeds scored 83 to 87% and about 12 episodes flipped per pair. for π0 and π0-FAST the switch removed the seed's effect completely, and for SmolVLA 96% of it, on a second machine as well.</p>
-    <p>then we tried the obvious follow-up and pinned six other layouts. π0.5 scored anywhere from 85 to 90% depending on which one we picked, and the layouts disagreed on about 11.5 episodes per pair, as many as a fresh seed.</p>
+    <p>then i tried the obvious follow-up and pinned six other layouts. π0.5 scored anywhere from 85 to 90% depending on which one i picked, and the layouts disagreed on about 11.5 episodes per pair, as many as a fresh seed.</p>
   </div>
   <figure class="side">
     <div class="clips c4" data-group>
@@ -264,7 +264,7 @@ footer a { color: var(--muted); }
 <div class="row">
   <div class="prose">
     <p>so pinning makes a number reproducible. it doesn't make it the right number, because there is no right layout to pin: LIBERO recorded its 50 demonstrations per task under 50 different layouts.</p>
-    <p>that's the line we kept coming back to. reproducible is not comparable. a pinned score repeats to the decimal, and it still carries an offset nobody knows the sign of.</p>
+    <p>that's the line i kept coming back to. reproducible is not comparable. a pinned score repeats to the decimal, and it still carries an offset nobody knows the sign of.</p>
   </div>
   <figure class="side">
     <div class="chart" id="ch-pin"></div>
@@ -273,7 +273,7 @@ footer a { color: var(--muted); }
 </div>
 
 <h2 id="stack">everything else between the weights and the number</h2>
-<p>once you start looking, every layer between the checkpoint and the success rate has a setting like this. we changed them one at a time.</p>
+<p>once you start looking, every layer between the checkpoint and the success rate has a setting like this. i changed them one at a time.</p>
 
 <h3>settling steps and the MuJoCo version</h3>
 <div class="row">
@@ -325,13 +325,13 @@ footer a { color: var(--muted); }
 </div>
 
 <h3>the GPU itself</h3>
-<p>last, the machine. we ran SmolVLA on an RTX 4090 and an RTX 3060 with identical software. the averages agree (−0.4 points). but even with CPU rendering, where both machines produce pixel-identical frames, 22 to 32 episodes per seed came out differently. the policy's arithmetic isn't exactly the same on two GPUs, so the rollouts aren't either.</p>
+<p>last, the machine. i ran SmolVLA on an RTX 4090 and an RTX 3060 with identical software. the averages agree (−0.4 points). but even with CPU rendering, where both machines produce pixel-identical frames, 22 to 32 episodes per seed came out differently. the policy's arithmetic isn't exactly the same on two GPUs, so the rollouts aren't either.</p>
 
 <h2 id="floor">how small a gap can you trust?</h2>
 <p>even with everything above held fixed, a lot of plain chance is left. fix the task and the stored scene and simply run it again, and about 82% of the variance in whether an episode succeeds is still there.</p>
 <p>that puts a floor under rankings. with LeRobot's protocol (100 episodes × 3 seeds), two strong policies need to be roughly 2.7 to 6.8 points apart before one evaluation can tell them apart reliably (80% power, 5% false alarms). many of the gaps between top LIBERO results are smaller than that.</p>
 
-<h2 id="advice">what we'd tell anyone running sim evals</h2>
+<h2 id="advice">what i'd tell anyone running sim evals</h2>
 <ol class="advice">
   <li><span>report the boring settings with every number: harness and version, seeds, chunk length, settling steps, simulator version, renderer and GPU.</span></li>
   <li><span>compare methods under identical settings, or average over several. a pinned seed, layout or machine gives a repeatable number with an unknown offset.</span></li>
@@ -339,10 +339,10 @@ footer a { color: var(--muted); }
   <li><span>when a number looks off, repeat a fixed-seed run, seed the simulator and the policy separately, replay actions with no policy, and change one thing at a time. those four checks found everything in this post.</span></li>
 </ol>
 
-<p>none of this is a bug in the usual sense. every choice above is reasonable on its own. a simulated success rate just measures the policy together with everything that ran it, and most of that never makes it into a paper. we're turning our switches into small pull requests for LeRobot, so that at least these settings are easy to set and easy to record.</p>
+<p>none of this is a bug in the usual sense. every choice above is reasonable on its own. a simulated success rate just measures the policy together with everything that ran it, and most of that never makes it into a paper. i'm turning my switches into small pull requests for LeRobot, so that at least these settings are easy to set and easy to record.</p>
 
 <details>
-  <summary>how we ran everything</summary>
+  <summary>how i ran everything</summary>
   <dl>
     <dt>policies</dt><dd>π0, π0.5, π0-FAST, SmolVLA and MolmoAct2 on LIBERO, using LeRobot's checkpoints. X-VLA and Qwen3-VL-GR00T on SimplerEnv's WidowX tasks through vla-eval. π0-FAST decodes greedily; the others sample noise at every call.</dd>
     <dt>protocol</dt><dd>lerobot-eval with stored initial states and hard resets; 10 tasks × the first 10 of LIBERO's 50 stored scenes per suite. runs differ only in the setting under test.</dd>
