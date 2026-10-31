@@ -5,830 +5,537 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="googlebot" content="noindex, nofollow">
-<style>img{max-width:100%}[hidden]{display:none!important}</style>
-<title>Reproducible Is Not Comparable</title>
-<meta name="description" content="How resets, harnesses and compute shape simulated robot policy evaluation.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Tinos:ital,wght@0,400;0,700;1,400&display=swap">
+<title>The seed moved the microwave</title>
+<meta name="description" content="What 521 evaluations of robot policies in simulation taught us about where a success rate comes from.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/charis-sil@5.3.0/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/charis-sil@5.3.0/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/charis-sil@5.3.0/400-italic.css">
 <style>
-/* Layout: one 960px reading column on white, fixed mono section index at left, figures break out to a wider band.
-   Single light look by request (modelled on a plain academic project page); every colour is still a token. */
+/* One white page in the portfolio's type (Charis SIL). Writing on the left, the clips beside it on wide screens;
+   everything stacks in story order on phones. */
 :root {
   --page: #ffffff;
-  --ink: #1b1b1b;
-  --ink-2: #444444;
-  --ink-3: #777777;
-  --caption: #3a3025;
-  --rule: #e6e2d8;
-  --grid: #ececec;
-  --well: #f6f6f4;
-  --pill: #ede0c5;
+  --ink: #1f1c19;
+  --ink-2: #4a4641;
+  --muted: #736e68;
+  --rule: #e3dfd8;
+  --well: #f3f1ed;
+  --link: #2c5b94;
   --pass: #2c5b94;
   --fail: #b94a3a;
-  --stone: #c9c3b6;
-  --serif: 'Times New Roman', Times, Tinos, 'Liberation Serif', serif;
-  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  --sans: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+  --serif: Charter, 'Charis SIL', 'Bitstream Charter', Georgia, serif;
   color-scheme: light;
 }
+* { box-sizing: border-box; }
 html { background: var(--page); scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-body { background: var(--page); color: var(--ink); font-family: var(--serif); padding-inline: 30px; padding-block: 60px; margin: 0; }
-.main { max-width: 960px; margin: 0 auto; }
-a { color: var(--ink); }
-a:focus-visible, button:focus-visible { outline: 2px solid var(--pass); outline-offset: 2px; }
+body { margin: 0; background: var(--page); color: var(--ink); font-family: var(--serif); padding: 40px 40px 70px; }
+.page { max-width: 1140px; margin: 0 auto; }
+a { color: var(--link); text-decoration: underline; text-decoration-color: #b9c8da; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { text-decoration-color: currentColor; }
+:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
+.skip { position: absolute; left: 16px; top: -60px; background: var(--page); padding: 10px; z-index: 5; }
+.skip:focus { top: 10px; }
 
-.side-nav { position: fixed; top: 40px; left: 32px; font-family: var(--mono); font-size: 13px; z-index: 10; }
-.side-nav ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-.side-nav a { color: var(--ink-3); text-decoration: none; font-weight: 300; border-left: 1px solid transparent; padding-left: 10px; transition: color .2s, border-color .2s; display: block; }
-.side-nav a:hover, .side-nav a.active { color: var(--ink); border-left-color: var(--ink); font-weight: 400; }
-@media (max-width: 1280px) { .side-nav { display: none; } }
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; font-size: 16px; margin-bottom: 64px; }
+.top a { color: var(--ink); text-decoration: none; }
+.top a:hover { color: var(--link); }
+.top .home { font-weight: 700; font-size: 19px; }
+.top .note { color: var(--muted); font-size: 14px; }
 
-.hero-text { font-size: 52px; font-weight: 700; letter-spacing: -1px; line-height: 1.12; margin: 0 0 28px; text-wrap: balance; }
-.hero-text .sub { display: block; font-weight: 400; font-size: .62em; letter-spacing: -.4px; margin-top: 10px; color: var(--ink-2); }
-.authors { font-family: var(--sans); line-height: 1.6; margin: 0 0 36px; }
-.authors p { margin: 0; }
-.author-list { font-size: 15px; color: var(--ink); margin-bottom: 4px !important; }
-.author-list .name { font-weight: 700; white-space: nowrap; }
-.authors sup { font-size: 10px; font-weight: 400; color: var(--ink-3); margin-left: 1px; }
-.affiliation-list { font-size: 13px; color: #555; }
-.affiliation-list a { color: inherit; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color .15s; }
-.affiliation-list a:hover { border-bottom-color: #555; }
-@media (max-width: 600px) { .author-list { font-size: 14px; } .affiliation-list { font-size: 12px; } }
+h1 { font-size: clamp(40px, 5vw, 60px); font-weight: 700; line-height: 1.04; letter-spacing: -1.4px; margin: 0 0 18px; max-width: 900px; }
+.dek { font-size: 22px; line-height: 1.45; color: var(--ink-2); margin: 0 0 14px; max-width: 680px; }
+.byline { font-size: 14px; color: var(--muted); letter-spacing: .3px; margin: 0 0 8px; }
+h2 { font-size: 32px; font-weight: 700; line-height: 1.15; letter-spacing: -.5px; margin: 76px 0 18px; max-width: 760px; scroll-margin-top: 24px; }
+h3 { font-size: 22px; font-weight: 700; line-height: 1.3; margin: 44px 0 10px; max-width: 680px; }
+p { font-size: 18px; line-height: 1.65; margin: 0 0 17px; }
+.prose, article > p { max-width: 680px; }
+.prose p:last-child { margin-bottom: 0; }
+em { font-style: italic; }
+sup { font-size: 11px; }
 
-/* hero: two synchronized rollouts */
-.teaser { position: relative; background: #000; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
-.stage { position: relative; line-height: 0; background: #000; overflow: hidden; }
-.stage video { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; max-width: 100%; }
-.badge { position: absolute; top: 8px; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .5px; color: #fff; background: rgba(0,0,0,.6); padding: 3px 7px; border-radius: 3px; text-transform: uppercase; line-height: 1.2; pointer-events: none; }
-.badge.l { left: 8px; } .badge.r { right: 8px; }
-.badge.r.fail { background: var(--fail); } .badge.r.pass { background: var(--pass); }
-.badge.r.pending { background: rgba(0,0,0,.6); }
-.controls { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px; display: flex; align-items: center; gap: 12px; background: linear-gradient(to top, rgba(0,0,0,.6), rgba(0,0,0,0)); font-family: var(--mono); color: #fff; opacity: 0; transition: opacity .2s; }
-.teaser:hover .controls, .controls:focus-within { opacity: 1; }
-@media (hover: none) { .controls { opacity: 1; } }
-.cbtn { background: none; border: 0; color: #fff; cursor: pointer; padding: 5px 7px; border-radius: 4px; font: 500 11px var(--mono); letter-spacing: .5px; }
-.cbtn:hover { background: rgba(255,255,255,.15); }
-.progress { flex: 1; height: 3px; background: rgba(255,255,255,.25); border-radius: 2px; position: relative; }
-.progress i { position: absolute; left: 0; top: 0; bottom: 0; background: #fff; border-radius: 2px; width: 0; }
-.teaser-caption { font-family: var(--mono); font-size: 13px; line-height: 1.5; color: #555; text-align: center; margin: 10px 0 0; }
+/* writing beside its media */
+.row { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 40px; align-items: start; margin: 26px 0 30px; }
+.row .side { position: sticky; top: 28px; min-width: 0; }
+.row .prose { min-width: 0; }
+.opening { margin-top: 36px; }
+@media (max-width: 960px) {
+  .row { grid-template-columns: 1fr; gap: 22px; }
+  .row .side { position: static; max-width: 560px; }
+}
 
-.link-row { font-family: var(--sans); font-size: 16px; text-align: center; margin: 26px 0 44px; color: var(--ink-3); }
-.link-row .soon { border-bottom: 1px solid var(--stone); padding-bottom: 2px; margin: 0 18px; white-space: nowrap; }
-.link-row .soon em { font-style: normal; font-family: var(--mono); font-size: 12px; margin-left: 6px; }
+figure { margin: 0; min-width: 0; }
+figcaption { color: var(--muted); font-size: 14.5px; line-height: 1.5; margin-top: 11px; max-width: 640px; }
+figcaption .mode { display: block; margin-top: 4px; font-size: 12.5px; letter-spacing: .2px; }
+.wide { margin: 30px 0 34px; }
 
-/* overview strip */
-.overview { margin: 0 0 50px; }
-.ov-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
-.ov-cell { margin: 0; display: flex; flex-direction: column; min-width: 0; }
-.ov-head { font-size: 20px; font-weight: 700; text-align: center; margin: 0 0 10px; line-height: 1.2; }
-.ov-visual { width: 100%; aspect-ratio: 4 / 3; background: var(--well); overflow: hidden; max-width: 100%; position: relative; }
-.ov-visual img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; display: block; }
-.ov-visual svg { width: 100%; height: 100%; display: block; }
-.ov-cell figcaption { font-family: var(--mono); font-size: 13px; line-height: 1.45; color: var(--ink-2); margin-top: 12px; text-align: center; }
-.caption { font-style: italic; font-size: 16px; line-height: 1.55; color: var(--caption); margin: 22px auto 0; max-width: 800px; text-align: center; }
-.caption strong { font-style: normal; font-weight: 700; color: var(--ink); }
+/* clips: plain frames, a result label when a clip ends */
+.clips { display: grid; gap: 6px; }
+.clips.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.clips.c4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.clips.c7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+@media (max-width: 760px) { .clips.c7 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 420px) { .clips.c4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tile { position: relative; background: var(--well); line-height: 0; }
+.tile video, .tile img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: cover; }
+.tile .tag { position: absolute; left: 6px; top: 6px; line-height: 1.2; font-size: 11.5px; color: #fff; background: rgba(20, 18, 16, .62); padding: 2px 6px; pointer-events: none; }
+.tile .res { position: absolute; right: 6px; bottom: 6px; line-height: 1.2; font-size: 11.5px; color: #fff; padding: 2px 6px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.tile .res[data-out="1"] { background: var(--pass); }
+.tile .res[data-out="0"] { background: var(--fail); }
+.tile.done .res { opacity: 1; }
+.tile.done video { filter: saturate(.85); }
+.cliptools { display: flex; gap: 16px; margin-top: 8px; font-size: 13.5px; }
+.cliptools button { font: inherit; color: var(--link); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: #b9c8da; text-underline-offset: 3px; }
+.cliptools button:hover { text-decoration-color: currentColor; }
 
-.tagline { margin: 72px 0 26px; font-size: 44px; font-weight: 700; letter-spacing: -.6px; line-height: 1.1; text-wrap: balance; scroll-margin-top: 24px; }
-.subtagline { font-family: var(--mono); font-size: 20px; font-weight: 500; margin: 40px 0 14px; letter-spacing: .2px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.pill { font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: .5px; background: var(--pill); padding: 3px 10px; border-radius: 999px; line-height: 1.4; }
-.section { font-size: 20px; line-height: 1.7; margin: 0 0 30px; }
-.section p { margin: 0 0 18px; }
-.section p:last-child { margin-bottom: 0; }
-.mathname { white-space: nowrap; }
+/* before/after divider */
+.compare { position: relative; aspect-ratio: 1 / 1; background: var(--well); overflow: hidden; cursor: col-resize; touch-action: pan-y; user-select: none; }
+.compare img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.compare .clip { position: absolute; inset: 0; clip-path: inset(0 70% 0 0); }
+.compare .handle { position: absolute; top: 0; bottom: 0; left: 30%; width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); pointer-events: none; }
+.compare .tag { position: absolute; top: 6px; font-size: 11.5px; line-height: 1.2; color: #fff; background: rgba(20, 18, 16, .62); padding: 2px 6px; pointer-events: none; }
+.compare .tag.l { left: 6px; } .compare .tag.r { right: 6px; }
+.compare input { position: absolute; inset: auto 0 0 0; width: 100%; opacity: 0; height: 24px; cursor: col-resize; }
+.inset { max-width: 340px; margin: 26px 0 0; }
+@media (min-width: 961px) { .row-diff > .prose { grid-column: 1; grid-row: 1; } .row-diff > .side { grid-column: 2; grid-row: 1 / span 2; } .row-diff > .inset { grid-column: 1; grid-row: 2; margin-top: 4px; } }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.stills { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.stills img { aspect-ratio: 4 / 3; }
 
-/* figures */
-.fig { margin: 0 0 44px; padding: 0; }
-.fig > figcaption { max-width: 860px; margin-left: auto; margin-right: auto; font-style: italic; font-size: 16px; line-height: 1.5; color: var(--caption); margin-top: 14px; text-align: center; }
-.fig > figcaption strong { font-style: normal; font-weight: 700; color: var(--ink); }
+/* charts */
 .chart { width: 100%; min-width: 0; }
 .chart svg { display: block; overflow: visible; }
-.wide { width: min(1240px, calc(100vw - 380px)); position: relative; left: 50%; transform: translateX(-50%); }
-@media (max-width: 1280px) { .wide { width: 100%; left: auto; transform: none; } }
-.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
-@media (max-width: 760px) { .two { grid-template-columns: 1fr; gap: 34px; } }
-.chart-title { font-family: var(--mono); font-size: 13px; color: #555; text-align: center; margin: 0 0 6px; }
+.chart-wide { max-width: 1140px; }
+.chart-mid { max-width: 760px; }
+#tip { position: fixed; z-index: 20; pointer-events: none; opacity: 0; transition: opacity .12s; background: #fff; border: 1px solid var(--rule); box-shadow: 0 2px 10px rgba(0,0,0,.08); padding: 7px 9px; font-size: 13px; line-height: 1.45; color: var(--ink); max-width: 260px; }
 
-.strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-.strip .cell { margin: 0; min-width: 0; }
-.strip figcaption { font-family: var(--mono); font-size: 12px; color: var(--ink-2); margin-top: 6px; text-align: center; }
-@media (max-width: 760px) {
-  .strip { display: flex; overflow-x: auto; scrollbar-width: none; padding-bottom: 6px; }
-  .strip::-webkit-scrollbar { display: none; }
-  .strip .cell { flex: 0 0 150px; }
-}
-.strip-tools { display: flex; justify-content: center; gap: 8px; margin-top: 10px; }
-.tbtn { font: 500 12px var(--mono); letter-spacing: .4px; color: var(--ink); background: var(--page); border: 1px solid var(--stone); padding: 5px 12px; border-radius: 3px; cursor: pointer; }
-.tbtn:hover { border-color: var(--ink); }
-.tbtn[aria-pressed="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); }
+/* lists */
+.tests { list-style: none; padding: 0; margin: 20px 0 24px; max-width: 680px; }
+.tests li { font-size: 18px; line-height: 1.6; margin: 0 0 14px; padding-left: 18px; border-left: 2px solid var(--rule); }
+.tests b { font-weight: 700; }
+.advice { list-style: none; padding: 0; margin: 22px 0 30px; max-width: 700px; counter-reset: n; }
+.advice li { counter-increment: n; display: grid; grid-template-columns: 34px 1fr; gap: 10px; font-size: 18px; line-height: 1.6; margin: 0 0 16px; }
+.advice li::before { content: '0' counter(n); color: var(--fail); font-size: 13px; padding-top: 4px; letter-spacing: .5px; }
+.aside { border-left: 2px solid var(--fail); padding-left: 18px; margin: 24px 0; max-width: 680px; }
+.aside p { font-size: 17px; color: var(--ink-2); }
 
-.compare-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-@media (max-width: 640px) { .compare-grid { grid-template-columns: 1fr; } }
-.compare-cell { margin: 0; min-width: 0; }
-.compare-stage { position: relative; width: 100%; aspect-ratio: 1 / 1; background: #000; overflow: hidden; user-select: none; cursor: col-resize; touch-action: pan-y; max-width: 100%; }
-.compare-stage img, .still img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
-.compare-clip { position: absolute; inset: 0; clip-path: inset(0 50% 0 0); }
-.compare-handle { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: rgba(255,255,255,.95); box-shadow: 0 0 0 1px rgba(0,0,0,.25); pointer-events: none; }
-.still { position: relative; width: 100%; aspect-ratio: 1 / 1; background: #fff; overflow: hidden; max-width: 100%; }
-.compare-cell figcaption { font-family: var(--mono); font-size: 12px; color: var(--ink-2); margin-top: 6px; text-align: center; line-height: 1.4; }
+details { margin: 44px 0 0; max-width: 700px; border-top: 1px solid var(--rule); padding-top: 18px; }
+summary { cursor: pointer; color: var(--link); font-size: 17px; }
+details[open] summary { margin-bottom: 14px; }
+details dl { margin: 0; display: grid; grid-template-columns: 110px 1fr; gap: 10px 18px; font-size: 16px; line-height: 1.55; }
+details dt { color: var(--muted); }
+details dd { margin: 0; }
+@media (max-width: 560px) { details dl { grid-template-columns: 1fr; gap: 2px; } details dd { margin-bottom: 10px; } }
 
-.legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 20px; font-family: var(--mono); font-size: 12px; color: var(--ink-2); margin: 0 0 10px; }
-.legend span { display: inline-flex; align-items: center; gap: 7px; }
-.sw { width: 11px; height: 11px; display: inline-block; }
-.sw.pass { background: var(--pass); } .sw.fail { background: var(--fail); } .sw.ink { background: #3d3a35; } .sw.stone { background: var(--stone); }
-.sw.dot { border-radius: 50%; }
+footer { margin-top: 70px; padding-top: 18px; border-top: 1px solid var(--rule); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; font-size: 14px; color: var(--muted); }
+footer a { color: var(--muted); }
 
-.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--rule); margin: 0 0 40px; }
-.fact { padding: 18px 18px 20px 0; min-width: 0; }
-.fact + .fact { padding-left: 18px; border-left: 1px solid var(--rule); }
-.fact b { display: block; font-family: var(--mono); font-weight: 500; font-size: 30px; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
-.fact span { display: block; font-size: 16px; line-height: 1.45; color: var(--ink-2); margin-top: 6px; }
-@media (max-width: 700px) { .facts { grid-template-columns: 1fr; } .fact + .fact { padding-left: 0; border-left: 0; border-top: 1px solid var(--rule); } }
-
-.table-wrap { overflow-x: auto; margin: 0 0 18px; }
-table.check { width: 100%; border-collapse: collapse; font-size: 17px; line-height: 1.45; }
-table.check th { font: 500 12px var(--mono); letter-spacing: .6px; text-transform: uppercase; color: var(--ink-3); text-align: left; padding: 0 16px 10px 0; border-bottom: 1px solid var(--ink); }
-table.check td { padding: 12px 16px 12px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
-table.check td:last-child { font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); min-width: 220px; padding-right: 0; }
-.takeaways { list-style: none; counter-reset: t; padding: 0; margin: 26px 0 0; display: grid; gap: 14px; }
-.takeaways li { counter-increment: t; display: grid; grid-template-columns: 46px 1fr; font-size: 19px; line-height: 1.6; }
-.takeaways li::before { content: "(" counter(t, lower-roman) ")"; font-family: var(--mono); font-size: 13px; color: var(--ink-3); padding-top: 4px; }
-
-.spec { display: grid; grid-template-columns: 170px minmax(0, 1fr); border-top: 1px solid var(--ink); margin: 0 0 30px; }
-.spec dt, .spec dd { padding: 13px 0; border-bottom: 1px solid var(--rule); margin: 0; }
-.spec dt { font: 500 12px var(--mono); letter-spacing: .6px; text-transform: uppercase; color: var(--ink-3); padding-top: 17px; }
-.spec dd { font-size: 18px; line-height: 1.55; }
-@media (max-width: 600px) { .spec { grid-template-columns: 1fr; } .spec dt { border-bottom: 0; padding-bottom: 0; } }
-.steps { margin: 0; padding-left: 1.3em; }
-.counts { font-family: var(--mono); font-size: 14px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0 0 30px; }
-.counts b { color: var(--ink); font-weight: 500; }
-
-.end { margin: 70px 0 10px; padding-top: 24px; border-top: 1px solid var(--rule); text-align: center; }
-.end p { font-style: italic; font-size: 16px; color: #6e6555; margin: 0; }
-.end small { display: block; font-family: var(--mono); font-size: 12px; color: #888; margin-top: 8px; letter-spacing: .3px; }
-
-#tip { position: fixed; z-index: 50; pointer-events: none; font: 12px/1.45 var(--mono); color: #fff; background: rgba(20,20,20,.92); padding: 7px 10px; border-radius: 3px; max-width: 280px; opacity: 0; transition: opacity .08s; }
-#tip b { font-weight: 600; }
-
-@media (max-width: 900px) {
-  body { padding-inline: 20px; padding-block: 40px; }
-  .hero-text { font-size: 40px; letter-spacing: -.5px; }
-  .tagline { font-size: 34px; }
-  .section { font-size: 18px; }
-  .subtagline { font-size: 17px; }
-  .ov-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-}
-@media (max-width: 600px) {
-  body { padding-inline: 16px; padding-block: 28px; }
-  .hero-text { font-size: 30px; line-height: 1.18; }
-  .tagline { font-size: 28px; margin-top: 56px; }
-  .section { font-size: 17px; line-height: 1.65; }
-  .subtagline { font-size: 15px; }
-  .ov-grid { gap: 12px; }
-  .ov-head { font-size: 17px; }
-  .ov-cell figcaption { font-size: 12px; }
-  .caption, .fig > figcaption { font-size: 15px; }
-  .link-row .soon { margin: 0 8px; }
-  .takeaways li { font-size: 17px; }
+@media (max-width: 640px) {
+  body { padding: 22px 16px 50px; }
+  .top { margin-bottom: 40px; }
+  h1 { letter-spacing: -.8px; }
+  .dek { font-size: 19px; }
+  h2 { font-size: 27px; margin-top: 58px; }
+  h3 { font-size: 20px; }
+  p, .tests li, .advice li { font-size: 17px; }
 }
 </style>
 </head>
 <body>
-<nav class="side-nav" aria-label="Sections">
-  <ul>
-    <li><a href="#abstract">Abstract</a></li>
-    <li><a href="#seeds">Seven seeds</a></li>
-    <li><a href="#mechanism">Mechanism</a></li>
-    <li><a href="#pinning">Pinning</a></li>
-    <li><a href="#stack">The stack</a></li>
-    <li><a href="#resolution">Resolution</a></li>
-    <li><a href="#checklist">Checklist</a></li>
-    <li><a href="#conclusion">Conclusion</a></li>
-    <li><a href="#method">Method</a></li>
-  </ul>
-</nav>
+<a class="skip" href="#story">skip to the story</a>
+<div class="page">
+<header class="top">
+  <a class="home" href="https://sahilapage.github.io/">sahil apage</a>
+  <span class="note">notes on robot evaluation</span>
+</header>
 
-<div class="main">
-  <h1 class="hero-text">Reproducible Is Not Comparable<span class="sub">How resets, harnesses and compute shape simulated robot policy evaluation</span></h1>
-  <div class="authors">
-    <p class="author-list"><span class="name">Sahil Apage<sup>1</sup></span>, <span class="name">Atharva Kshirsagar<sup>1</sup></span></p>
-    <p class="affiliation-list"><sup>1</sup><a href="https://vjti.ac.in" target="_blank" rel="noopener">Veermata Jijabai Technological Institute (VJTI), Mumbai</a></p>
+<main id="story">
+<article>
+<h1>the seed moved the microwave</h1>
+<p class="dek">what 521 evaluations of robot policies in simulation taught us about where a success rate comes from.</p>
+<p class="byline">sahil apage and atharva kshirsagar · october 2026</p>
+
+<div class="row opening">
+  <div class="prose">
+    <p>this started with a boring check. we had π0.5 running on <a href="https://libero-project.github.io" title="LIBERO — libero-project.github.io">LIBERO</a> through <a href="https://github.com/huggingface/lerobot" title="LeRobot — github.com">LeRobot</a>, and before comparing it with anything else we ran the exact same command five times, just to see how much the number moves on its own. it came back 87, 90, 87, 87 and 90 percent.</p>
+    <p>same checkpoint, same seed, same GPU, same command. three points is about the size of the gaps people use to rank policies on this benchmark, so we kept pulling on the thread. it took 521 full evaluations (about 53,600 episodes), seven policies, two simulators and two machines before we felt we understood where these numbers come from.</p>
+    <p>this post walks through what we found, with the actual rollout videos. none of it needs a robot, just a GPU and a lot of patience.</p>
   </div>
-
-  <div class="teaser" id="teaser">
-    <div class="stage"><video data-seed="1000" src="assets/seed1000.mp4" muted playsinline preload="auto" aria-label="Rollout under seed 1000"></video><span class="badge l">Seed 1000</span><span class="badge r pending" data-out="0">Failure</span></div>
-    <div class="stage"><video data-seed="2000" src="assets/seed2000.mp4" muted playsinline preload="auto" aria-label="Rollout under seed 2000"></video><span class="badge l">Seed 2000</span><span class="badge r pending" data-out="1">Success</span></div>
-    <div class="controls">
-      <button class="cbtn" data-act="play" type="button" id="tplay">Pause</button>
-      <div class="progress" aria-hidden="true"><i></i></div>
-      <button class="cbtn" data-act="speed" type="button" id="tspeed">1×</button>
+  <figure class="side">
+    <div class="clips c2" data-group>
+      <div class="tile"><video muted playsinline preload="metadata" poster="assets/same_pass.jpg" aria-label="first run: the book goes into the caddy"><source src="assets/same_pass.mp4" type="video/mp4"></video><span class="tag">run 1</span><span class="res" data-out="1">success</span></div>
+      <div class="tile"><video muted playsinline preload="metadata" poster="assets/same_fail.jpg" aria-label="third run: the arm keeps fumbling the book"><source src="assets/same_fail.mp4" type="video/mp4"></video><span class="tag">run 3</span><span class="res" data-out="0">failure</span></div>
     </div>
-  </div>
-  <p class="teaser-caption">Same stored scene, same deterministic policy (π0-FAST), two evaluation seeds. Real evaluation videos.</p>
-
-  <p class="link-row"><span class="soon">Paper<em>coming soon</em></span><span class="soon">Code<em>coming soon</em></span></p>
-
-  <figure class="overview">
-    <div class="ov-grid">
-      <figure class="ov-cell">
-        <div class="ov-head">One stored scene</div>
-        <div class="ov-visual"><img src="assets/first_s1000.png" alt="First frame of the scene: a microwave on the left, two mugs on a wooden table, the robot arm above"></div>
-        <figcaption>The initial-state file fixes every joint of robot and objects.</figcaption>
-      </figure>
-      <figure class="ov-cell">
-        <div class="ov-head">What the seed moves</div>
-        <div class="ov-visual"><img src="assets/diff_t0.png" alt="Difference image of the first frames under two seeds; only the microwave outline is marked red"></div>
-        <figcaption>Pixels that differ at t = 0 between two seeds: only the microwave.</figcaption>
-      </figure>
-      <figure class="ov-cell">
-        <div class="ov-head">Hidden choices</div>
-        <div class="ov-visual"><svg id="ov-ledger" role="img" aria-label="Re-draw of each hidden choice relative to a new seed"></svg></div>
-        <figcaption>Ten one-at-a-time changes re-draw 0.6–2.4× as many outcomes as a new seed.</figcaption>
-      </figure>
-      <figure class="ov-cell">
-        <div class="ov-head">One evaluation</div>
-        <div class="ov-visual"><svg id="ov-res" role="img" aria-label="Smallest detectable difference against episodes"></svg></div>
-        <figcaption>Differences under 2–7 points are not reliably detectable.</figcaption>
-      </figure>
-    </div>
-    <figcaption class="caption"><strong>What this work measures.</strong> We ran 521 complete evaluations of seven frozen vision-language-action policies on two simulators and two machines, and traced where their success rates come from: the reset, the harness, the renderer, the machine and a handful of constants papers rarely report.</figcaption>
+    <div class="cliptools"><button type="button" data-toggle>pause</button><button type="button" data-restart>replay</button></div>
+    <figcaption>the same command, run twice. same weights, seed, machine and stored scene. one run drops the book straight into the caddy, the other keeps fumbling it.<span class="mode">π0 · LIBERO-Long, task 5 · real evaluation videos, half speed</span></figcaption>
   </figure>
-
-  <h2 class="tagline" id="abstract">Abstract</h2>
-  <div class="section">
-    <p>Simulated success rates depend on evaluation infrastructure that papers rarely report. We audit it with 521 complete evaluations (about 53,600 episodes) of seven frozen vision-language-action policies on two simulators and two machines. LIBERO's seeded reset moves joint-less fixtures that its stored initial states do not record, so one stored scene can succeed under one seed and fail under another, even for a policy that draws no random numbers. Pinning the layout removes 96–100% of the simulator seed's effect for four policies, yet six pinned layouts score π0.5 between 85 and 90%. A pinned evaluation is reproducible; it is not comparable.</p>
-    <p>The pattern extends across the stack. Re-running a command, harness seeding and the renderer re-draw which episodes succeed; the action-chunk length shifts scores by 3–12 points, CPU rendering moves one SimplerEnv policy by 13.5 points, and a settling constant moves one task by 30 points under one MuJoCo version only. With task and stored initial state fixed, 82% of an episode's outcome variance remains, and one binary-success evaluation cannot reliably detect differences below 2–7 points. We give a four-step audit and a reporting checklist.</p>
-  </div>
-
-  <h2 class="tagline" id="seeds">Seven seeds, one scene</h2>
-  <div class="section">
-    <p>π0-FAST decodes greedily and draws no random numbers. We gave it one stored LIBERO-Long scene, <span class="mathname">“put the yellow and white mug in the microwave and close it”</span>, and changed nothing but the evaluation seed. Under seed 1000 it fails. Under seeds 2000 through 7000 it succeeds.</p>
-  </div>
-  <figure class="fig wide">
-    <div class="strip" id="strip"></div>
-    <div class="strip-tools"><button class="tbtn" type="button" id="splay">Pause</button><button class="tbtn" type="button" id="srestart">Restart</button><button class="tbtn" type="button" id="sslow" aria-pressed="false">0.5×</button></div>
-    <figcaption>All seven videos start from the same stored initial state and play in sync. The policy is identical in every run; only the simulator seed differs.</figcaption>
-  </figure>
-
-  <h2 class="tagline" id="mechanism">The seed chooses the furniture</h2>
-  <div class="section">
-    <p>Across seven seeds on LIBERO-Long, π0-FAST changes 9.5 scene outcomes per pair of runs, and none in three runs at a fixed seed. Something outside the policy depends on the seed. LIBERO's hard reset places the joint-less fixtures (cabinet, stove, microwave, wine rack) with the seeded generator, but a stored initial state records only joint positions and velocities, so it cannot put them back. The seed alone moves them by up to 2.5 cm, with a median of 1.3–1.6 cm per suite.</p>
-  </div>
-
-  <div class="subtagline">Find the difference <span class="pill">drag the divider</span></div>
-  <div class="compare-grid">
-    <figure class="compare-cell">
-      <div class="compare-stage" id="compare" role="slider" tabindex="0" aria-label="Compare first frames under seeds 1000 and 2000" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
-        <img src="assets/first_s2000.png" alt="First frame under seed 2000">
-        <div class="compare-clip"><img src="assets/first_s1000.png" alt="First frame under seed 1000"></div>
-        <div class="compare-handle"></div>
-        <span class="badge l">Seed 1000</span><span class="badge r">Seed 2000</span>
-      </div>
-      <figcaption>First frames of the two runs. Move the divider across the microwave.</figcaption>
-    </figure>
-    <figure class="compare-cell">
-      <div class="still"><img src="assets/diff_t0.png" alt="Pixels that differ between the two first frames, marked red: the microwave only"></div>
-      <figcaption>Pixels that differ between them (red), above video-compression noise.</figcaption>
-    </figure>
-  </div>
-
-  <div class="subtagline" style="margin-top:56px">Which scenes change</div>
-  <figure class="fig wide">
-    <div class="legend"><span><i class="sw pass"></i>success</span><span><i class="sw fail"></i>failure</span><span>faded column: same outcome under all seven seeds</span></div>
-    <div class="chart" id="matrix"></div>
-    <figcaption><strong>Every scene π0-FAST sees on LIBERO-Long, under seven seeds.</strong> Each column is one recorded scene (task × stored initial state); each row is one evaluation. All 26 scenes that change sit in the five tasks with a seed-dependent fixture; the five fixture-free tasks change in 0 of 50 (task-level Fisher p = 0.004).</figcaption>
-  </figure>
-
-  <div class="subtagline">Three tests, one answer</div>
-  <div class="section"><p>If the seed reaches the physics only through the fixtures, then only tasks with a re-placed fixture should change when only the simulator seed varies. We tested that three ways, the last with no policy at all.</p></div>
-  <figure class="fig wide">
-    <div class="legend"><span><i class="sw ink"></i>task has a fixture the seed moves</span><span><i class="sw stone"></i>no such fixture</span><span><svg width="12" height="12" aria-hidden="true"><rect x="2.5" y="2.5" width="7" height="7" transform="rotate(45 6 6)" fill="#ffffff" stroke="#1b1b1b" stroke-width="1.3"/></svg>policy seed only</span></div>
-    <div class="chart" id="tests"></div>
-    <figcaption><strong>Outcomes vary only where the seed moves a fixture.</strong> π0-FAST over seven seeds; π0 with its policy seed fixed and only the simulator seed varied (bars), against the policy seed alone (diamonds, which change scenes in every task); and recorded human demonstrations replayed under 20 seeds with no policy; a fixture-free task's final states stay bit-identical.</figcaption>
-  </figure>
-
-  <div class="facts">
-    <div class="fact"><b>5 of 6</b><span>fixed action sequences, replayed from one stored state under two seeds, diverge once the arm meets a displaced fixture.</span></div>
-    <div class="fact"><b>5 of 5</b><span>become bit-identical again when one seed's fixture poses are copied into the other's model.</span></div>
-    <div class="fact"><b>26 of 50</b><span>human demonstrations change outcome under 20 seeds in a fixture task. A fixture-free task: none.</span></div>
-  </div>
-
-  <div class="subtagline">The demonstrations had varied layouts too</div>
-  <figure class="fig">
-    <div class="legend"><span><i class="sw pass dot"></i>50 recorded demonstrations</span><span><svg width="12" height="12" aria-hidden="true"><path d="M2 2L10 10M10 2L2 10" stroke="#b94a3a" stroke-width="1.8"/></svg>20 evaluation seeds</span></div>
-    <div class="chart" id="layouts"></div>
-    <figcaption><strong>Fixture positions on the table, in cm from the demonstrations' mean.</strong> LIBERO-Goal, “open the middle drawer of the cabinet”. The demonstrations were recorded under layouts as spread as the ones the seed produces, and the initial-state files leave them out.</figcaption>
-  </figure>
-
-  <h2 class="tagline" id="pinning">Pinning buys reproducibility, not comparability</h2>
-  <div class="section">
-    <p>The direct remedy is to store each initial state's fixture poses and restore them with the state. Our opt-in switch instead draws the placement from the scene's index. With it, π0.5 scores 90.0% under all six simulator seeds, with no scene changing in any of 15 pairs; without it the same runs score 83–87% and change 11.7 scenes per pair. The switch removes 100% of the seed's effect for π0 and π0-FAST and 96% for SmolVLA, also on a second machine.</p>
-    <p>It does not choose a right layout. Six other pinned layouts score π0.5 anywhere from 85 to 90% and disagree on 11.5 scenes per pair, as many as a new seed. SmolVLA's six layouts score 63–75%.</p>
-  </div>
-  <figure class="fig">
-    <div class="chart" id="pin"></div>
-    <figcaption><strong>π0.5 on LIBERO-Long, one dot per evaluation.</strong> A new seed each run; the layout pinned while the seed varies; and six other pinned layouts at one seed. Each pinned score is exactly repeatable, and each is a different number.</figcaption>
-  </figure>
-
-  <h2 class="tagline" id="stack">The rest of the stack: re-draw or shift</h2>
-  <div class="section">
-    <p>We vary one setting at a time and ask two questions. Does it <b>re-draw</b> outcomes, changing which scenes succeed? And does it <b>shift</b> the score, moving the mean? Re-draw is measured against the same policy under a new seed (1 means as many changed scenes as a new seed). Shift is the paired change in success rate with a 95% interval over seeds.</p>
-    <p>Held fixed, every one of these choices is an offset of unknown sign. Determinism locks π0.5 at 91% where it averages 88.2% without it; the second machine sits at −1.7 points.</p>
-  </div>
-  <figure class="fig wide">
-    <div class="legend"><span><i class="sw fail"></i>shifts the score (interval excludes zero)</span><span><i class="sw pass"></i>no detectable shift</span><span>hover a row for details</span></div>
-    <div class="chart" id="ledger"></div>
-    <figcaption><strong>Each hidden choice re-draws outcomes; some also shift the score.</strong> Rows without an interval: a re-run has nothing to shift, openpi's seeding was run at two seeds only, and each pinned layout is its own fixed offset (85–90%).</figcaption>
-  </figure>
-
-  <div class="two">
-    <figure class="fig" style="margin:0">
-      <div class="chart-title">A second machine</div>
-      <div class="chart" id="machine"></div>
-      <figcaption>SmolVLA, LIBERO-Goal, same software on an RTX 3060 and an RTX 4090. GPU rendering, seven seeds: −0.4 points [−5.3, +4.4]. CPU rendering gives pixel-identical frames, yet 22–32 scenes flip per seed.</figcaption>
-    </figure>
-    <figure class="fig" style="margin:0">
-      <div class="chart-title">The renderer, on SimplerEnv</div>
-      <div class="chart" id="simpler"></div>
-      <figcaption>WidowX tasks, seven repeats of 96 episodes each. CPU instead of GPU rendering lowers Qwen3-VL-GR00T from 60.1% to 46.6% and leaves X-VLA unchanged.</figcaption>
-    </figure>
-  </div>
-
-  <figure class="fig" style="margin-top:44px">
-    <div class="chart-title">Settling steps × MuJoCo version</div>
-    <div class="legend"><span><i class="sw fail dot"></i>MuJoCo 3.8.1</span><span><i class="sw pass dot"></i>MuJoCo 3.3.7</span></div>
-    <div class="chart" id="settling"></div>
-    <figcaption>π0.5 on LIBERO-Spatial. Settling for 40 no-op steps after reset instead of LeRobot's hard-coded 10 costs task 5 thirty points [−42, −18] under MuJoCo 3.8.1 and nothing detectable under 3.3.7. Two hidden choices that only matter together.</figcaption>
-  </figure>
-
-  <div class="facts" style="margin-top:10px">
-    <div class="fact"><b>3–12 pts</b><span>the action-chunk length (10 or 50, set differently in LeRobot's docs and π0.5's model card) costs π0.5 per suite.</span></div>
-    <div class="fact"><b>0 of 100</b><span>scenes change between repeats at a fixed seed with determinism on (30 pairs). Between-seed variation and the mean do not change.</span></div>
-    <div class="fact"><b>12–13</b><span>of 100 outcomes change between openpi's and LeRobot's seeding for π0.5, close to a new seed's 14–17.</span></div>
-  </div>
-
-  <h2 class="tagline" id="resolution">What one evaluation can resolve</h2>
-  <div class="section">
-    <p>An episode's outcome variance splits into a part between recorded scenes and a part within them. Pooled over 21 cells of policy, suite and chunk length, 82% sits within: the same task from the same stored state still succeeds or fails by chance. Re-running two cells with the layout pinned leaves 79–95% of it, so the unrecorded layout accounts for only 5–21%.</p>
-    <p>For rankings this sets a floor. A two-sided test at α = 0.05 with 80% power detects only differences of 2.7–6.8 points between strong policies under LeRobot's protocol (100 episodes × 3 seeds), and 2.1–5.3 under openpi's (500 × 1).</p>
-  </div>
-  <div class="two">
-    <figure class="fig" style="margin:0">
-      <div class="chart-title">Smallest detectable difference</div>
-      <div class="chart" id="mde"></div>
-      <figcaption>Band: the 14 strong cells (mean ≥ 85%); line: their median. Binary success, α = 0.05, 80% power.</figcaption>
-    </figure>
-    <figure class="fig" style="margin:0">
-      <div class="chart-title">Two near-tied pairs, one dot per seed</div>
-      <div class="chart" id="pairs"></div>
-      <figcaption id="pairs-cap">LIBERO-Long, same harness.</figcaption>
-    </figure>
-  </div>
-
-  <h2 class="tagline" id="checklist">Reporting checklist</h2>
-  <div class="section"><p>Four simulator-agnostic steps find these effects: repeat a fixed-seed evaluation, seed the streams separately, replay fixed actions or demonstrations without a policy, and swap one variable. What they found becomes a list of what to report with a simulated success rate.</p></div>
-  <div class="table-wrap">
-    <table class="check">
-      <thead><tr><th>Report</th><th>What we measured</th></tr></thead>
-      <tbody>
-        <tr><td>Harness, version, seeding procedure, seeds</td><td>other seeding: 0.71 of a new seed</td></tr>
-        <tr><td>Reset: whether fixture poses are restored with the state</td><td>pinned layouts: 85–90%, 63–75%</td></tr>
-        <tr><td>Chunk length, control mode, settling steps</td><td>chunk length: 3–12 points</td></tr>
-        <tr><td>Simulator and physics-engine version</td><td>with settling: −30 points on one task</td></tr>
-        <tr><td>Batch size and policy random streams</td><td>batching couples the noise streams</td></tr>
-        <tr><td>Determinism flags, machine (GPU, CPU, driver), renderer</td><td>re-draw 0.6–1.6 of a new seed; shift 1–13.5 points</td></tr>
-        <tr><td>Initial states, scenes × repeats, per-scene outcomes</td><td>enables paired tests and rankings</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <ol class="takeaways">
-    <li><span>Pinning a seed, layout, harness or machine makes a score reproducible but offsets it by an unknown amount. Compare methods under identical settings, or average over several.</span></li>
-    <li><span>Report chunk length, settling steps, simulator version and renderer. Here they shifted scores by 3–14 points on a suite and 30 on one task.</span></li>
-    <li><span>One binary-success evaluation does not reliably separate methods closer than 2–7 points. Report multi-seed means and per-scene outcomes.</span></li>
-  </ol>
-
-  <h2 class="tagline" id="conclusion">Conclusion</h2>
-  <div class="section">
-    <p>A simulated success rate measures a policy together with the infrastructure that ran it. In LIBERO the clearest case is the reset. The seed moves furniture that the stored initial states never recorded, so a policy that draws no random numbers succeeds or fails on the same scene depending only on the seed. We traced that link causally, down to bit-identical physics, and built a switch that pins the layout.</p>
-    <p>Pinning made scores exactly repeatable, and it showed that repeatable is not the same as comparable. Each pinned layout, harness, machine or renderer is a fixed offset of unknown sign, and the same pattern runs through the rest of the stack and appears on SimplerEnv too. So compare methods under identical settings or average over several, report the settings in the checklist with every score, and treat gaps below 2–7 points from one binary-success evaluation as unresolved.</p>
-  </div>
-
-  <h2 class="tagline" id="method">Method</h2>
-  <p class="counts"><span><b>521</b> evaluations</span><span><b>~53,600</b> episodes</span><span><b>7</b> policies from 5 groups</span><span><b>2</b> simulators</span><span><b>2</b> machines</span></p>
-  <dl class="spec">
-    <dt>Policies</dt><dd>π0, π0.5, π0-FAST, SmolVLA and MolmoAct2 (LeRobot's LIBERO checkpoints) on LIBERO; X-VLA and Qwen3-VL-GR00T on SimplerEnv's WidowX tasks through vla-eval. π0-FAST decodes greedily; the others sample noise at every call.</dd>
-    <dt>Protocol</dt><dd><code style="font-family:var(--mono);font-size:.85em">lerobot-eval</code> with stored initial states and hard resets; 10 tasks × the first 10 of LIBERO's 50 stored initial states per suite run. Runs differ only in the setting under test.</dd>
-    <dt>Stack</dt><dd>MuJoCo 3.8.1 (and 3.3.7 for the version test), robosuite 1.4.0; GPU (EGL) and CPU (OSMesa) rendering; an RTX 4090 workstation, with an RTX 3060 workstation for the second-machine replication.</dd>
-    <dt>Audit</dt><dd><ol class="steps"><li>Repeat a fixed-seed evaluation.</li><li>Seed the simulator and policy streams separately.</li><li>Replay fixed actions, or human demonstrations, with no policy.</li><li>Swap one variable at a time.</li></ol></dd>
-    <dt>Tools</dt><dd>Opt-in switches we added to LeRobot's evaluation code for layout pinning, determinism and separate seed streams. Every number and figure is regenerated by script from per-episode outcome files, and an independent audit re-derived each one from the raw outputs.</dd>
-  </dl>
-
-  <div class="end">
-    <p>Reproducible is not comparable.</p>
-    <small>Sahil Apage · Atharva Kshirsagar · VJTI Mumbai</small>
-  </div>
 </div>
 
-<div id="tip" role="status" aria-live="polite"></div>
-<script type="application/json" id="data">{"hero":{"1000":0,"2000":1,"3000":1,"4000":1,"5000":1,"6000":1,"7000":1},"matrix":{"seeds":[1000,2000,3000,4000,5000,6000,7000],"moves":[false,false,true,true,false,true,false,false,true,true],"out":[[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,0,0,1,1,1,1],[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,1,0,1,1,0,0,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,1,0,1,1,1,1,0,1,1,1,1,1],[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1],[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,0,1,1,1,0,0,1,1,1,1,1,1,1,0,1,1],[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1]],"rates":[87.0,88.0,87.0,85.0,84.0,87.0,88.0]},"mech":{"moves":[false,false,true,true,false,true,false,false,true,true],"fast":[0,0,4,5,0,5,0,0,8,4],"sim":[0,0,4,4,0,2,0,0,4,0],"pol":[5,9,9,8,5,9,7,5,8,9],"demo":[{"label":"Object: soup in basket","flips":0,"n":50,"moves":false},{"label":"Goal: turn on the stove","flips":7,"n":50,"moves":true},{"label":"Goal: open middle drawer","flips":13,"n":50,"moves":true},{"label":"Long: soup + sauce in basket","flips":0,"n":50,"moves":false},{"label":"Long: bowl in drawer, close it","flips":26,"n":50,"moves":true}],"unpinned":[86.0,83.0,84.0,87.0,85.0,86.0],"pinned":[90.0,90.0,90.0,90.0,90.0,90.0],"layouts":[90.0,89.0,87.0,89.0,85.0,85.0]},"ledger":[{"group":"\u03c00.5 \u00b7 LIBERO-Long","label":"Re-run the same command","redraw":0.635676,"shift":null,"txt":{"redraw":"0.64"}},{"group":"\u03c00.5 \u00b7 LIBERO-Long","label":"openpi vs. LeRobot seeding","redraw":0.709459,"shift":null,"txt":{"redraw":"0.71"}},{"group":"\u03c00.5 \u00b7 LIBERO-Long","label":"Another pinned furniture layout","redraw":0.654595,"shift":null,"txt":{"redraw":"0.65"}},{"group":"\u03c00.5 \u00b7 LIBERO-Long","label":"Action chunk 50 vs. 10","redraw":2.378378,"shift":{"d":-10.0,"lo":-11.963243,"hi":-8.036757},"txt":{"redraw":"2.38","d":"\u221210.0","lo":"\u221212.0","hi":"\u22128.0"}},{"group":"\u03c00.5 \u00b7 LIBERO-Spatial","label":"Settling 40 vs. 10 steps","redraw":1.734694,"shift":{"d":-3.714286,"lo":-4.990694,"hi":-2.437877},"txt":{"redraw":"1.73","d":"\u22123.7","lo":"\u22125.0","hi":"\u22122.4"}},{"group":"SmolVLA \u00b7 LIBERO-Goal","label":"Second machine, CPU rendering","redraw":0.748611,"shift":{"d":-1.666667,"lo":-3.100884,"hi":-0.232449},"txt":{"redraw":"0.75","d":"\u22121.7","lo":"\u22123.1","hi":"\u22120.2"}},{"group":"SmolVLA \u00b7 LIBERO-Goal","label":"Second machine, GPU rendering","redraw":0.629167,"shift":{"d":-0.428571,"lo":-5.259571,"hi":4.402428},"txt":{"redraw":"0.63","d":"\u22120.4","lo":"\u22125.3","hi":"+4.4"}},{"group":"SmolVLA \u00b7 LIBERO-Goal","label":"GPU vs. CPU rendering","redraw":0.751042,"shift":{"d":1.25,"lo":-8.761226,"hi":11.261226},"txt":{"redraw":"0.75","d":"+1.2","lo":"\u22128.8","hi":"+11.3"}},{"group":"Qwen3-VL-GR00T \u00b7 SimplerEnv","label":"GPU vs. CPU rendering","redraw":1.631028,"shift":{"d":13.541667,"lo":9.359556,"hi":17.723778},"txt":{"redraw":"1.63","d":"+13.5","lo":"+9.4","hi":"+17.7"}},{"group":"X-VLA \u00b7 SimplerEnv","label":"GPU vs. CPU rendering","redraw":1.153571,"shift":{"d":-0.14881,"lo":-2.301435,"hi":2.003816},"txt":{"redraw":"1.15","d":"\u22120.1","lo":"\u22122.3","hi":"+2.0"}}],"machine":{"gpu":[{"seed":1000,"a":65.0,"b":66.0},{"seed":2000,"a":70.0,"b":70.0},{"seed":3000,"a":78.0,"b":69.0},{"seed":4000,"a":69.0,"b":66.0},{"seed":5000,"a":62.0,"b":69.0},{"seed":6000,"a":70.0,"b":74.0},{"seed":7000,"a":68.0,"b":65.0}],"cpu":[{"seed":1000,"a":79.0,"b":78.0,"flips":23},{"seed":2000,"a":79.0,"b":77.0,"flips":22},{"seed":3000,"a":72.0,"b":70.0,"flips":32}]},"simpler":[{"policy":"X-VLA","cpu":[94.791667,92.708333,93.75,90.625,92.708333,90.625,91.666667],"gpu":[90.625,88.541667,92.708333,94.791667,92.708333,93.75,92.708333],"reported":94.8},{"policy":"Qwen3-VL-GR00T","cpu":[47.916667,44.791667,45.833333,51.041667,48.958333,44.791667,42.708333],"gpu":[54.166667,60.416667,65.625,58.333333,63.541667,56.25,62.5],"reported":66.7}],"settling":{"3.8.1|10|task5":[90.0,90.0,100.0,80.0,90.0,100.0,100.0],"3.8.1|10|others":[98.888889,98.888889,97.777778,97.777778,97.777778,100.0,100.0],"3.8.1|40|task5":[60.0,60.0,90.0,60.0,60.0,60.0,50.0],"3.8.1|40|others":[98.888889,98.888889,96.666667,96.666667,94.444444,100.0,100.0],"3.3.7|10|task5":[100.0,100.0,100.0,100.0,100.0,100.0,100.0],"3.3.7|10|others":[98.888889,100.0,97.777778,98.888889,97.777778,98.888889,100.0],"3.3.7|40|task5":[100.0,100.0,100.0,100.0,90.0,100.0,100.0],"3.3.7|40|others":[98.888889,98.888889,98.888889,97.777778,97.777778,97.777778,100.0]},"resolution":{"N":[100,150,200,250,300,350,400,450,500,550,600,650,700,750,800,850,900,950,1000,1050,1100,1150,1200,1250,1300,1350,1400,1450,1500,1550,1600,1650,1700,1750,1800,1850,1900,1950,2000],"med":[7.772608,6.346308,5.496064,4.915829,4.487517,4.154634,3.886304,3.664042,3.476016,3.314251,3.173154,3.048668,2.93777,2.838155,2.748032,2.665982,2.590869,2.521767,2.457914,2.398679,2.343529,2.292017,2.243759,2.198425,2.155734,2.115436,2.077317,2.041187,2.006879,1.974244,1.943152,1.913484,1.885134,1.858009,1.832021,1.807095,1.783158,1.760149,1.738008],"lo":[4.687949,3.827694,3.31488,2.964919,2.706588,2.505814,2.343974,2.20992,2.096514,1.998948,1.913847,1.838765,1.771878,1.711797,1.65744,1.607953,1.56265,1.520971,1.48246,1.446732,1.41347,1.382401,1.353294,1.325952,1.300203,1.275898,1.252907,1.231116,1.210423,1.19074,1.171987,1.154093,1.136995,1.120634,1.10496,1.089926,1.075489,1.061611,1.048257],"hi":[11.759668,9.601729,8.315341,7.437467,6.789447,6.285807,5.879834,5.543561,5.259083,5.014339,4.800864,4.612521,4.444737,4.294024,4.15767,4.033533,3.919889,3.81534,3.718733,3.629112,3.545673,3.467737,3.394724,3.326136,3.261545,3.200576,3.142903,3.08824,3.036333,2.986959,2.939917,2.89503,2.852138,2.811098,2.77178,2.734067,2.697853,2.66304,2.629542],"cells":14,"pairs":[{"a":"\u03c00-FAST","av":[87.0,88.0,87.0,85.0,84.0,87.0,88.0],"b":"\u03c00.5 (chunk 50)","bv":[88.0,84.0,87.0,82.0,83.0,90.0,90.0]},{"a":"MolmoAct2","av":[90.0,94.0,97.0,94.0,94.0,95.0,94.0],"b":"\u03c00.5 (chunk 10)","bv":[96.0,94.0,96.0,93.0,95.0]}]},"layouts":[{"name":"Cabinet","demos":[[0.025,0.4],[-0.123,0.229],[-0.195,0.244],[0.443,0.288],[0.908,-1.05],[-0.214,-0.47],[-0.836,-0.692],[0.187,0.841],[-0.965,0.572],[0.185,0.291],[0.358,0.031],[0.852,0.575],[-0.602,-0.251],[0.168,-0.819],[0.805,0.672],[-0.241,-0.903],[-0.483,-0.759],[0.054,0.213],[-0.722,0.129],[-0.283,0.077],[0.867,0.737],[0.846,0.346],[0.392,0.262],[0.77,-0.757],[-0.837,-0.999],[-0.226,0.771],[0.826,0.236],[-0.089,0.721],[0.048,-0.107],[0.907,-0.802],[0.014,-0.278],[-0.42,-0.406],[-0.452,-0.761],[0.381,-0.942],[0.73,-0.08],[-0.833,0.867],[-0.46,0.189],[-0.914,0.346],[0.062,-0.756],[0.321,0.929],[0.139,0.82],[-0.93,0.486],[-0.047,0.536],[0.91,-0.113],[0.738,0.323],[-0.132,-0.817],[-0.833,-0.302],[-0.642,-0.642],[-0.574,-0.04],[0.116,0.61]],"seeds":[[-0.914,0.895],[-0.448,-0.07],[0.331,0.252],[0.73,0.848],[-0.765,-0.505],[-0.961,-0.726],[-0.254,-0.622],[0.167,-0.526],[-0.393,-0.631],[0.417,0.838],[1.014,0.328],[-0.766,-1.068],[-0.707,0.781],[-0.256,-0.258],[0.687,-0.068],[0.162,0.495],[-0.036,-0.274],[0.841,0.111],[-0.518,-0.941],[-0.618,0.263]]},{"name":"Stove","demos":[[0.853,0.036],[0.336,-0.929],[-0.017,0.545],[-0.889,-0.805],[-0.004,0.931],[-0.002,-0.031],[0.552,0.475],[-0.598,0.142],[-0.724,0.199],[-0.493,0.976],[0.17,-1.004],[-0.816,0.379],[-0.756,0.936],[1.012,0.331],[0.519,0.482],[-0.542,0.276],[-0.542,-0.54],[-0.471,-0.322],[-0.359,-0.641],[0.095,-0.889],[-0.844,-0.35],[-0.039,-0.405],[0.7,-0.331],[-0.793,-0.78],[-0.872,0.268],[0.192,-0.83],[0.927,-0.43],[0.442,0.806],[0.131,-0.125],[0.493,-0.563],[0.604,-0.239],[0.895,-0.457],[-0.558,0.082],[-0.397,0.747],[0.15,0.506],[0.451,0.783],[0.612,0.727],[1.058,0.118],[0.172,0.678],[0.57,0.023],[-0.606,0.527],[-0.088,-0.975],[-0.799,0.497],[0.968,-0.505],[-0.671,0.885],[-0.147,-0.555],[0.764,-0.844],[0.425,0.596],[-0.787,0.143],[-0.272,-0.542]],"seeds":[[0.506,-0.291],[0.153,0.133],[0.159,0.787],[-0.012,0.289],[-0.307,-0.377],[0.632,0.017],[0.613,0.283],[0.595,0.307],[-0.195,0.902],[-0.492,-0.568],[0.209,0.145],[-0.848,0.845],[-0.392,-0.698],[-0.804,-0.076],[-0.203,0.012],[0.887,0.404],[0.259,-0.576],[-0.031,0.577],[-0.811,-0.708],[-0.739,0.128]]},{"name":"Wine rack","demos":[[-0.158,-0.47],[0.196,-0.94],[-0.664,-0.116],[-0.809,-0.838],[-0.009,-0.534],[-0.855,-0.322],[-0.0,0.795],[0.108,-0.761],[-0.609,-0.868],[0.389,-0.412],[0.846,-0.689],[0.531,0.169],[0.63,-0.177],[0.299,0.219],[-0.933,-0.637],[-0.111,0.593],[0.492,-0.202],[0.72,0.984],[-0.955,0.784],[-0.049,-0.83],[0.484,0.663],[-0.894,-0.763],[0.643,-0.634],[-0.885,-0.8],[0.508,0.377],[-0.484,-0.362],[0.43,0.803],[0.139,1.029],[0.132,-0.379],[-0.53,-0.145],[-0.495,0.03],[0.532,-0.824],[0.616,0.954],[-0.096,0.771],[-0.484,-0.354],[0.898,0.604],[0.407,1.0],[-0.315,0.586],[-0.265,-0.899],[-0.044,-0.62],[0.555,0.666],[-0.719,0.86],[0.768,-0.162],[-0.133,0.999],[-0.741,0.4],[-0.101,0.6],[0.455,0.82],[0.561,0.198],[-0.242,-0.785],[0.242,-0.382]],"seeds":[[0.695,0.35],[-0.856,0.77],[0.814,-0.715],[-0.678,0.783],[0.338,0.92],[-0.035,0.392],[-0.074,-0.867],[-0.096,-0.921],[-0.222,-0.155],[-0.031,-0.513],[0.977,-0.526],[-0.553,0.627],[0.176,0.132],[-0.044,-0.036],[-0.809,0.895],[-0.157,-0.362],[0.833,-0.454],[0.441,0.962],[-0.584,0.824],[-0.5,0.85]]}]}</script>
+<h2 id="rerun">same command, different answer</h2>
+<div class="row">
+  <div class="prose">
+    <p>the first suspect was the GPU. by default LeRobot lets cuDNN time a few kernels when it starts and keep whichever is fastest, and some GPU kernels add numbers up in whatever order their threads happen to finish. neither matters much in training. in a closed loop it does: the last digit of an action changes, the arm ends up a hair somewhere else, the next camera frame is a hair different, and a few hundred steps later the gripper closes a few millimetres to the left.</p>
+    <p>between any two of our five runs, 7 to 15 of the 100 episodes changed outcome. switching on deterministic kernels removed that completely. π0.5 scored 91% in all five runs, with not one episode different between any pair, and π0 behaved the same way. SmolVLA happened to repeat exactly even without the switch, and π0-FAST kept one scene that flips no matter what.</p>
+    <p>notice that 91 isn't a better score. without the switch π0.5 averaged 88.2%. determinism freezes one particular draw of the noise, so the number becomes repeatable, but it's still one sample.</p>
+  </div>
+  <figure class="side">
+    <div class="chart" id="ch-repeat"></div>
+    <figcaption>π0.5 on LIBERO-Long, the same command five times with the default GPU kernels and five times with deterministic ones. each dot is a full evaluation of 100 episodes.</figcaption>
+  </figure>
+</div>
+
+<h2 id="seed">the seed moved the microwave</h2>
+<p>re-runs were the easy part. the stranger thing showed up when we changed the seed.</p>
+<p>π0-FAST is a handy policy for this because it decodes greedily. given the same images it produces the same actions, with no sampling anywhere. we took one stored scene from LIBERO-Long, “put the yellow and white mug in the microwave and close it”, and ran it under seven evaluation seeds. nothing else changed.</p>
+<figure class="wide">
+  <div class="clips c7" data-group>
+    <div class="tile"><video muted playsinline preload="metadata" poster="assets/seed1000.jpg" aria-label="seed 1000"><source src="assets/seed1000.mp4" type="video/mp4"></video><span class="tag">seed 1000</span><span class="res" data-out="0">failure</span></div>
+    <div class="tile"><video muted playsinline preload="metadata" poster="assets/seed2000.jpg" aria-label="seed 2000"><source src="assets/seed2000.mp4" type="video/mp4"></video><span class="tag">seed 2000</span><span class="res" data-out="1">success</span></div>
+    <div class="tile"><video muted playsinline preload="metadata" poster="assets/seed3000.jpg" aria-label="seed 3000"><source src="assets/seed3000.mp4" type="video/mp4"></video><span class="tag">seed 3000</span><span class="res" data-out="1">success</span></div>
+    <div class="tile"><video muted playsinline preload="metadata" poster="assets/seed4000.jpg" aria-label="seed 4000"><source src="assets/seed4000.mp4" type="video/mp4"></video><span class="tag">seed 4000</span><span class="res" data-out="1">success</span></div>
+    <div class="tile"><video muted playsinline preload="metadata" poster="assets/seed5000.jpg" aria-label="seed 5000"><source src="assets/seed5000.mp4" type="video/mp4"></video><span class="tag">seed 5000</span><span class="res" data-out="1">success</span></div>
+    <div class="tile"><video muted playsinline preload="metadata" poster="assets/seed6000.jpg" aria-label="seed 6000"><source src="assets/seed6000.mp4" type="video/mp4"></video><span class="tag">seed 6000</span><span class="res" data-out="1">success</span></div>
+    <div class="tile"><video muted playsinline preload="metadata" poster="assets/seed7000.jpg" aria-label="seed 7000"><source src="assets/seed7000.mp4" type="video/mp4"></video><span class="tag">seed 7000</span><span class="res" data-out="1">success</span></div>
+  </div>
+  <div class="cliptools"><button type="button" data-toggle>pause</button><button type="button" data-restart>replay</button></div>
+  <figcaption>one stored scene, seven seeds, and a policy that draws no random numbers. seed 1000 fails and the other six succeed.<span class="mode">π0-FAST · LIBERO-Long, task 9 · the seven videos play in sync</span></figcaption>
+</figure>
+
+<div class="row row-diff">
+  <div class="prose">
+    <p>if the policy has no randomness and the scene comes from a file, what is the seed changing?</p>
+    <p>it took us a while to see it. drag the divider across the microwave in the two first frames: it isn't in the same place.</p>
+    <p>LIBERO's initial-state files store the position and velocity of every joint in the scene: the robot, the mug, the hinges of doors and drawers. the furniture itself (cabinets, stoves, the microwave, the wine rack) is fixed to the table and has no joint. on every hard reset LIBERO places it again with the seeded random generator, and the stored state has no slot to put it back.</p>
+    <p>so the seed moves the furniture, by up to 2.5 cm and typically 1.3 to 1.6 cm. that sounds small, but it's a lot when the task is to catch the edge of a microwave door.</p>
+  </div>
+  <figure class="side">
+    <div class="compare" id="compare" aria-label="first frames under seed 1000 and seed 2000">
+      <img src="assets/first_s2000.png" alt="first frame, seed 2000" width="360" height="360">
+      <div class="clip"><img src="assets/first_s1000.png" alt="first frame, seed 1000" width="360" height="360"></div>
+      <div class="handle"></div>
+      <span class="tag l">seed 1000</span><span class="tag r">seed 2000</span>
+      <input type="range" min="0" max="100" value="30" aria-label="divider position">
+    </div>
+    <figcaption>first frames under seed 1000 and seed 2000. drag across the microwave.</figcaption>
+  </figure>
+  <figure class="inset">
+    <div class="tile"><img src="assets/diff_t0.png" alt="pixels that differ between the two first frames" width="720" height="720" loading="lazy"></div>
+    <figcaption>pixels that differ between the two first frames, above video-compression noise. only the microwave moved.</figcaption>
+  </figure>
+</div>
+
+<p>once you know what to look for, it's everywhere. here is every scene π0-FAST sees on LIBERO-Long, under all seven seeds.</p>
+<figure class="wide">
+  <div class="chart chart-wide" id="ch-matrix"></div>
+  <figcaption>each column is one stored scene and each row one seed; blue is a success, red a failure. faded columns give the same result under every seed. all 26 scenes that change sit in the five tasks where the seed moves a fixture, and the other five tasks don't change once in 50 scenes. the overall score barely moves (84 to 88%), which is exactly why this is easy to miss.<span class="mode">hover a column for the task and scene</span></figcaption>
+</figure>
+
+<h2 id="proof">checking that it really is the furniture</h2>
+<p>one policy lining up with one explanation isn't proof, so we tried to break the explanation three ways.</p>
+<ul class="tests">
+  <li><b>no policy at all.</b> we replayed fixed action sequences from one stored state under two seeds. five of six diverged, each one at the moment the arm touched a displaced fixture.</li>
+  <li><b>swap the furniture.</b> copying one seed's fixture poses into the other seed's model made five of five runs bit-identical again.</li>
+  <li><b>human demonstrations.</b> replayed under 20 seeds, 26 of LIBERO's 50 recorded demos changed outcome in a task with a moving cabinet. in a task where the seed moves nothing, none did.</li>
+</ul>
+<p>we weren't the first to bump into this. a version of it was reported on the OpenVLA repo (<a href="https://github.com/openvla/openvla/issues/342" title="openvla#342 — github.com">issue #342</a>), where the fixtures weren't restored when one environment was reused across episodes. what we added is tracing it all the way down to the physics and measuring what it does to scores.</p>
+<div class="aside"><p>one twist: LIBERO's own demonstrations were recorded with the furniture in slightly different places too, about as spread out as the seed makes it. so the evaluation scenes aren't out of distribution. the files that are supposed to fix a scene just don't fix all of it.</p></div>
+
+<h2 id="pin">pinning the furniture</h2>
+<div class="row">
+  <div class="prose">
+    <p>the fix is small. we added an opt-in switch that ties the furniture placement to the scene's index instead of the seed, so a stored scene really is one scene.</p>
+    <p>with it, π0.5 scored 90.0% under six different seeds, and no episode changed between any two runs. without it, the same six seeds scored 83 to 87% and about 12 episodes flipped per pair. for π0 and π0-FAST the switch removed the seed's effect completely, and for SmolVLA 96% of it, on a second machine as well.</p>
+    <p>then we tried the obvious follow-up and pinned six other layouts. π0.5 scored anywhere from 85 to 90% depending on which one we picked, and the layouts disagreed on about 11.5 episodes per pair, as many as a fresh seed.</p>
+  </div>
+  <figure class="side">
+    <div class="clips c4" data-group>
+      <div class="tile"><video muted playsinline preload="metadata" poster="assets/pinned1000.jpg" aria-label="pinned layout, seed 1000"><source src="assets/pinned1000.mp4" type="video/mp4"></video><span class="tag">1000</span><span class="res" data-out="1">success</span></div>
+      <div class="tile"><video muted playsinline preload="metadata" poster="assets/pinned2000.jpg" aria-label="pinned layout, seed 2000"><source src="assets/pinned2000.mp4" type="video/mp4"></video><span class="tag">2000</span><span class="res" data-out="1">success</span></div>
+      <div class="tile"><video muted playsinline preload="metadata" poster="assets/pinned3000.jpg" aria-label="pinned layout, seed 3000"><source src="assets/pinned3000.mp4" type="video/mp4"></video><span class="tag">3000</span><span class="res" data-out="1">success</span></div>
+      <div class="tile"><video muted playsinline preload="metadata" poster="assets/pinned4000.jpg" aria-label="pinned layout, seed 4000"><source src="assets/pinned4000.mp4" type="video/mp4"></video><span class="tag">4000</span><span class="res" data-out="1">success</span></div>
+    </div>
+    <figcaption>the microwave scene again with the layout pinned, under four seeds. the four videos are identical frame for frame.<span class="mode">π0-FAST · LIBERO-Long, task 9</span></figcaption>
+  </figure>
+</div>
+
+<div class="row">
+  <div class="prose">
+    <p>so pinning makes a number reproducible. it doesn't make it the right number, because there is no right layout to pin: LIBERO recorded its 50 demonstrations per task under 50 different layouts.</p>
+    <p>that's the line we kept coming back to. reproducible is not comparable. a pinned score repeats to the decimal, and it still carries an offset nobody knows the sign of.</p>
+  </div>
+  <figure class="side">
+    <div class="chart" id="ch-pin"></div>
+    <figcaption>π0.5 on LIBERO-Long, one dot per evaluation: a new seed each run, the layout pinned under six seeds, and six other pinned layouts. every pinned score repeats exactly, and each one is a different number.</figcaption>
+  </figure>
+</div>
+
+<h2 id="stack">everything else between the weights and the number</h2>
+<p>once you start looking, every layer between the checkpoint and the success rate has a setting like this. we changed them one at a time.</p>
+
+<h3>settling steps and the MuJoCo version</h3>
+<div class="row">
+  <div class="prose">
+    <p>after every reset LeRobot steps the simulator ten times with a zero action, so objects can settle before the policy looks. in LIBERO-Spatial task 5 the bowl is stored hovering just above a ramekin and is meant to drop onto it. on MuJoCo 3.3.7 it does. on 3.8.1 it ends up leaning off the rim.</p>
+    <p>with 40 settling steps instead of 10, task 5 falls from 92.9% to 62.9% on MuJoCo 3.8.1, and barely moves on 3.3.7 (100% to 98.6%). either change on its own looks harmless; together they cost the task thirty points. there's an open LeRobot issue about the bowl (<a href="https://github.com/huggingface/lerobot/issues/4390" title="lerobot#4390 — github.com">#4390</a>).</p>
+  </div>
+  <figure class="side">
+    <div class="stills">
+      <div class="tile"><img src="assets/settle_mj337_10.jpg" alt="MuJoCo 3.3.7, 10 settling steps: the bowl sits on the ramekin" width="480" height="360" loading="lazy"><span class="tag">3.3.7 · 10 steps</span></div>
+      <div class="tile"><img src="assets/settle_mj337_40.jpg" alt="MuJoCo 3.3.7, 40 settling steps: the bowl sits on the ramekin" width="480" height="360" loading="lazy"><span class="tag">3.3.7 · 40 steps</span></div>
+      <div class="tile"><img src="assets/settle_mj381_10.jpg" alt="MuJoCo 3.8.1, 10 settling steps: the bowl leans off the ramekin" width="480" height="360" loading="lazy"><span class="tag">3.8.1 · 10 steps</span></div>
+      <div class="tile"><img src="assets/settle_mj381_40.jpg" alt="MuJoCo 3.8.1, 40 settling steps: the bowl leans further off the ramekin" width="480" height="360" loading="lazy"><span class="tag">3.8.1 · 40 steps</span></div>
+    </div>
+    <figcaption>the first frame the policy sees, zoomed in on the bowl and ramekin.<span class="mode">LIBERO-Spatial, task 5, stored scene 0</span></figcaption>
+  </figure>
+</div>
+<figure class="wide">
+  <div class="chart chart-mid" id="ch-settle"></div>
+  <figcaption>π0.5 on LIBERO-Spatial, seven paired seeds per setting. small dots are single runs, large dots their mean.</figcaption>
+</figure>
+
+<h3>chunk length</h3>
+<div class="row">
+  <div class="prose">
+    <p>π0.5 predicts 50 actions at a time, and the evaluator decides how many of them to execute before asking again. LeRobot's LIBERO docs use 10, while the config that ships with the checkpoint says 50. that one number moves π0.5 by 3 to 12 points per suite.</p>
+  </div>
+  <figure class="side">
+    <div class="clips c2" data-group>
+      <div class="tile"><video muted playsinline preload="metadata" poster="assets/chunk10.jpg" aria-label="10 actions per chunk"><source src="assets/chunk10.mp4" type="video/mp4"></video><span class="tag">10 per chunk</span><span class="res" data-out="1">success</span></div>
+      <div class="tile"><video muted playsinline preload="metadata" poster="assets/chunk50.jpg" aria-label="50 actions per chunk"><source src="assets/chunk50.mp4" type="video/mp4"></video><span class="tag">50 per chunk</span><span class="res" data-out="0">failure</span></div>
+    </div>
+    <figcaption>same scene and seed. executing 10 actions per chunk, π0.5 takes the bowl from the drawer and puts it on the plate. executing all 50, it fails.<span class="mode">π0.5 · LIBERO-Spatial, task 4 · half speed</span></figcaption>
+  </figure>
+</div>
+
+<h3>how the harness seeds things</h3>
+<p>openpi and LeRobot seed the same LIBERO simulator in different ways. running π0.5 both ways with everything else equal changed 12 to 13 of 100 outcomes, close to what a new seed changes (14 to 17).</p>
+
+<h3>the renderer</h3>
+<div class="row">
+  <div class="prose">
+    <p>on SimplerEnv's WidowX tasks, rendering on the CPU instead of the GPU dropped Qwen3-VL-GR00T from 60.1% to 46.6% over seven repeats each. X-VLA didn't move. same tasks, same weights; one policy is just more sensitive to small rendering differences than the other.</p>
+  </div>
+  <figure class="side">
+    <div class="chart" id="ch-render"></div>
+    <figcaption>seven repeats of 96 episodes per renderer. the dashed line is the score reported by the <a href="https://arxiv.org/abs/2603.13966" title="vla-eval: a unified evaluation harness for VLA models — arxiv.org">vla-eval</a> reproduction, which renders on the GPU.</figcaption>
+  </figure>
+</div>
+
+<h3>the GPU itself</h3>
+<p>last, the machine. we ran SmolVLA on an RTX 4090 and an RTX 3060 with identical software. the averages agree (−0.4 points). but even with CPU rendering, where both machines produce pixel-identical frames, 22 to 32 episodes per seed came out differently. the policy's arithmetic isn't exactly the same on two GPUs, so the rollouts aren't either.</p>
+
+<h2 id="floor">how small a gap can you trust?</h2>
+<p>even with everything above held fixed, a lot of plain chance is left. fix the task and the stored scene and simply run it again, and about 82% of the variance in whether an episode succeeds is still there.</p>
+<p>that puts a floor under rankings. with LeRobot's protocol (100 episodes × 3 seeds), two strong policies need to be roughly 2.7 to 6.8 points apart before one evaluation can tell them apart reliably (80% power, 5% false alarms). many of the gaps between top LIBERO results are smaller than that.</p>
+
+<h2 id="advice">what we'd tell anyone running sim evals</h2>
+<ol class="advice">
+  <li><span>report the boring settings with every number: harness and version, seeds, chunk length, settling steps, simulator version, renderer and GPU.</span></li>
+  <li><span>compare methods under identical settings, or average over several. a pinned seed, layout or machine gives a repeatable number with an unknown offset.</span></li>
+  <li><span>don't rank policies that are within a few points of each other on one binary-success evaluation, and share per-scene outcomes so others can compare paired.</span></li>
+  <li><span>when a number looks off, repeat a fixed-seed run, seed the simulator and the policy separately, replay actions with no policy, and change one thing at a time. those four checks found everything in this post.</span></li>
+</ol>
+
+<p>none of this is a bug in the usual sense. every choice above is reasonable on its own. a simulated success rate just measures the policy together with everything that ran it, and most of that never makes it into a paper. we're turning our switches into small pull requests for LeRobot, so that at least these settings are easy to set and easy to record.</p>
+
+<details>
+  <summary>how we ran everything</summary>
+  <dl>
+    <dt>policies</dt><dd>π0, π0.5, π0-FAST, SmolVLA and MolmoAct2 on LIBERO, using LeRobot's checkpoints. X-VLA and Qwen3-VL-GR00T on SimplerEnv's WidowX tasks through vla-eval. π0-FAST decodes greedily; the others sample noise at every call.</dd>
+    <dt>protocol</dt><dd>lerobot-eval with stored initial states and hard resets; 10 tasks × the first 10 of LIBERO's 50 stored scenes per suite. runs differ only in the setting under test.</dd>
+    <dt>stack</dt><dd>MuJoCo 3.8.1 (and 3.3.7 for the version test), robosuite 1.4.0; GPU (EGL) and CPU (OSMesa) rendering; an RTX 4090 workstation, plus an RTX 3060 one for the second-machine runs.</dd>
+    <dt>numbers</dt><dd>521 evaluations, about 53,600 episodes. every number and chart here is regenerated by script from the per-episode outcome files.</dd>
+  </dl>
+</details>
+</article>
+</main>
+
+<footer>
+  <span>sahil apage · atharva kshirsagar · vjti, mumbai</span>
+  <a href="#story">back to the top ↑</a>
+</footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script type="application/json" id="data">{"matrix":{"seeds":[1000,2000,3000,4000,5000,6000,7000],"moves":[false,false,true,true,false,true,false,false,true,true],"out":[[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,0,0,1,1,1,1],[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,1,0,1,1,0,0,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,1,0,1,1,1,1,0,1,1,1,1,1],[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1],[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,0,1,1,1,0,0,1,1,1,1,1,1,1,0,1,1],[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1]],"rates":[87.0,88.0,87.0,85.0,84.0,87.0,88.0]},"settling":{"3.8.1|10|task5":[90.0,90.0,100.0,80.0,90.0,100.0,100.0],"3.8.1|10|others":[98.888889,98.888889,97.777778,97.777778,97.777778,100.0,100.0],"3.8.1|40|task5":[60.0,60.0,90.0,60.0,60.0,60.0,50.0],"3.8.1|40|others":[98.888889,98.888889,96.666667,96.666667,94.444444,100.0,100.0],"3.3.7|10|task5":[100.0,100.0,100.0,100.0,100.0,100.0,100.0],"3.3.7|10|others":[98.888889,100.0,97.777778,98.888889,97.777778,98.888889,100.0],"3.3.7|40|task5":[100.0,100.0,100.0,100.0,90.0,100.0,100.0],"3.3.7|40|others":[98.888889,98.888889,98.888889,97.777778,97.777778,97.777778,100.0]},"simpler":[{"policy":"X-VLA","cpu":[94.791667,92.708333,93.75,90.625,92.708333,90.625,91.666667],"gpu":[90.625,88.541667,92.708333,94.791667,92.708333,93.75,92.708333],"reported":94.8},{"policy":"Qwen3-VL-GR00T","cpu":[47.916667,44.791667,45.833333,51.041667,48.958333,44.791667,42.708333],"gpu":[54.166667,60.416667,65.625,58.333333,63.541667,56.25,62.5],"reported":66.7}],"pin":{"unpinned":[86.0,83.0,84.0,87.0,85.0,86.0],"pinned":[90.0,90.0,90.0,90.0,90.0,90.0],"layouts":[90.0,89.0,87.0,89.0,85.0,85.0]},"repeat":{"off":{"rates":[87.0,90.0,87.0,87.0,90.0],"flips":[15,12,12,11,9,13,10,10,13,7]},"on":{"rates":[91.0,91.0,91.0,91.0,91.0],"flips":[0,0,0,0,0,0,0,0,0,0]}}}</script>
 <script>
 (function () {
   const D = JSON.parse(document.getElementById('data').textContent);
-  const C = { ink: '#1b1b1b', ink2: '#444444', ink3: '#777777', grid: '#ececec', pass: '#2c5b94', fail: '#b94a3a', stone: '#c9c3b6', dark: '#3d3a35', page: '#ffffff' };
-  const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+  const C = { ink: '#1f1c19', ink2: '#4a4641', muted: '#736e68', grid: '#ebe8e2', pass: '#2c5b94', fail: '#b94a3a', page: '#ffffff' };
+  const FONT = "Charter, 'Charis SIL', Georgia, serif";
   const NS = 'http://www.w3.org/2000/svg';
-  const minus = s => String(s).replace(/-/g, '−');
-  const f1 = v => minus(v.toFixed(1));
-  const sgn = v => (v > 0 ? '+' : '') + f1(v);
+  const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+  const f1 = v => v.toFixed(1);
 
   function el(tag, a, p) { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; }
-  function tx(p, x, y, s, a) { const e = el('text', Object.assign({ x, y, 'font-family': MONO, 'font-size': 11, fill: C.ink3, stroke: C.page, 'stroke-width': 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' }, a || {}), p); e.textContent = s; return e; }
+  function tx(p, x, y, s, a) { const e = el('text', Object.assign({ x, y, 'font-family': FONT, 'font-size': 12, fill: C.muted }, a || {}), p); e.textContent = s; return e; }
   function lin(d0, d1, r0, r1) { return v => r0 + (v - d0) / (d1 - d0) * (r1 - r0); }
-  function svgIn(host, w, h, label) { host.innerHTML = ''; const s = el('svg', { width: w, height: h, viewBox: `0 0 ${w} ${h}`, role: 'img', 'aria-label': label }, host); return s; }
-  function yAxis(s, x, y, ticks, fmt, left, right, title, ymid) {
+  function svgIn(host, w, h, label) { host.innerHTML = ''; return el('svg', { width: w, height: h, viewBox: `0 0 ${w} ${h}`, role: 'img', 'aria-label': label }, host); }
+  function yAxis(s, y, ticks, fmt, left, right, title, ymid) {
     for (const t of ticks) {
       el('line', { x1: left, x2: right, y1: y(t), y2: y(t), stroke: C.grid, 'stroke-width': 1 }, s);
-      el('line', { x1: left - 4, x2: left, y1: y(t), y2: y(t), stroke: C.ink, 'stroke-width': 1 }, s);
-      tx(s, left - 7, y(t) + 4, fmt(t), { 'text-anchor': 'end' });
+      tx(s, left - 8, y(t) + 4, fmt(t), { 'text-anchor': 'end' });
     }
-    el('line', { x1: left, x2: left, y1: y(ticks[0]), y2: y(ticks[ticks.length - 1]), stroke: C.ink, 'stroke-width': 1 }, s);
-    if (title) tx(s, 12, ymid, title, { 'text-anchor': 'middle', fill: '#555', 'font-size': 12, transform: `rotate(-90 12 ${ymid})` });
+    if (title) tx(s, 11, ymid, title, { 'text-anchor': 'middle', transform: `rotate(-90 11 ${ymid})` });
   }
   const tip = document.getElementById('tip');
-  function hover(node, html) {
-    node.style.cursor = 'default';
-    node.addEventListener('pointerenter', e => { tip.innerHTML = html; tip.style.opacity = 1; move(e); });
-    node.addEventListener('pointermove', move);
-    node.addEventListener('pointerleave', () => { tip.style.opacity = 0; });
-  }
   function move(e) {
     const w = tip.offsetWidth, h = tip.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14;
     if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + h > innerHeight - 8) y = e.clientY - h - 14;
     tip.style.left = x + 'px'; tip.style.top = y + 'px';
   }
+  function hover(node, html) {
+    node.addEventListener('pointerenter', e => { tip.innerHTML = html; tip.style.opacity = 1; move(e); });
+    node.addEventListener('pointermove', move);
+    node.addEventListener('pointerleave', () => { tip.style.opacity = 0; });
+  }
   function jitter(vals, step) {         // spread equal values sideways so every dot stays visible
-    const seen = {}; return vals.map(v => { const k = v.toFixed(2); seen[k] = (seen[k] || 0) + 1; return seen[k] - 1; })
-      .map((n, i, arr) => { const k = vals[i].toFixed(2); const tot = vals.filter(v => v.toFixed(2) === k).length; return (n - (tot - 1) / 2) * step; });
+    const seen = {};
+    return vals.map(v => { const k = v.toFixed(2); seen[k] = (seen[k] || 0) + 1; return seen[k] - 1; })
+      .map((n, i) => { const k = vals[i].toFixed(2), tot = vals.filter(v => v.toFixed(2) === k).length; return (n - (tot - 1) / 2) * step; });
   }
-  const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
-
-  const TASKS = ['soup + sauce in basket', 'cheese + butter in basket', 'stove on, moka pot on it', 'bowl in drawer, close it', 'mugs on two plates',
-    'book into caddy', 'mug on plate, pudding right', 'soup + cheese in basket', 'both moka pots on stove', 'mug in microwave, close it'];
-
-  /* ---------- overview minis (fixed geometry, scaled by viewBox) ---------- */
-  (function () {
-    const s = document.getElementById('ov-ledger'); s.setAttribute('viewBox', '0 0 240 180');
-    const L = D.ledger, x = lin(0, 2.6, 22, 228);
-    el('line', { x1: x(1), x2: x(1), y1: 14, y2: 160, stroke: C.ink, 'stroke-dasharray': '3 3', 'stroke-width': 1 }, s);
-    L.forEach((r, i) => {
-      const y = 20 + i * 14, sh = r.shift && (r.shift.lo > 0 || r.shift.hi < 0);
-      el('line', { x1: x(0), x2: x(r.redraw), y1: y, y2: y, stroke: sh ? C.fail : C.pass, 'stroke-width': 7 }, s);
-    });
-    el('line', { x1: x(0), x2: x(0), y1: 12, y2: 160, stroke: C.ink, 'stroke-width': 1 }, s);
-    tx(s, x(1), 174, '1 = new seed', { 'text-anchor': 'middle', 'font-size': 10 });
-  })();
-  (function () {
-    const s = document.getElementById('ov-res'); s.setAttribute('viewBox', '0 0 240 180');
-    const R = D.resolution, x = lin(100, 2000, 30, 228), y = lin(0, 8.6, 156, 12);
-    const band = R.N.map((n, i) => `${x(n)},${y(R.hi[i])}`).join(' ') + ' ' + R.N.map((n, i) => `${x(n)},${y(R.lo[i])}`).reverse().join(' ');
-    el('polygon', { points: band, fill: C.pass, 'fill-opacity': 0.18 }, s);
-    el('polyline', { points: R.N.map((n, i) => `${x(n)},${y(R.med[i])}`).join(' '), fill: 'none', stroke: C.pass, 'stroke-width': 2 }, s);
-    el('line', { x1: 30, x2: 30, y1: 12, y2: 156, stroke: C.ink }, s); el('line', { x1: 30, x2: 228, y1: 156, y2: 156, stroke: C.ink }, s);
-    tx(s, 129, 174, 'episodes →', { 'text-anchor': 'middle', 'font-size': 10 });
-    tx(s, 36, 22, 'points', { 'font-size': 10 });
-  })();
-
-  /* ---------- outcome matrix ---------- */
-  function drawMatrix() {
-    const host = document.getElementById('matrix'), W = host.clientWidth; const M = D.matrix;
-    const per = W < 700 ? 5 : 10, LW = W < 700 ? 44 : 78, gap = W < 700 ? 6 : 8;
-    const cs = Math.min(13, (W - LW - gap * (per - 1)) / (per * 10)), rowH = Math.max(cs, W < 700 ? 11 : 15);
-    const bandH = 40 + M.seeds.length * rowH + 30, bands = 10 / per, H = bands * bandH;
-    const s = svgIn(host, W, H, 'Outcome of every LIBERO-Long scene under seven seeds');
-    const changedCols = [];
-    for (let k = 0; k < 100; k++) changedCols.push(new Set(M.out.map(r => r[k])).size > 1);
-    for (let b = 0; b < bands; b++) {
-      const y0 = b * bandH;
-      M.seeds.forEach((sd, r) => tx(s, LW - 8, y0 + 40 + r * rowH + rowH * .75, W < 700 ? String(sd) : 'seed ' + sd, { 'text-anchor': 'end', 'font-size': W < 700 ? 9.5 : 11 }));
-      for (let ti = 0; ti < per; ti++) {
-        const t = b * per + ti, x0 = LW + ti * (cs * 10 + gap), mv = M.moves[t];
-        tx(s, x0, y0 + 14, 'task ' + t, { fill: C.ink, 'font-size': 11 });
-        if (mv) {
-          el('line', { x1: x0, x2: x0 + cs * 10, y1: y0 + 30, y2: y0 + 30, stroke: C.ink, 'stroke-width': 2 }, s);
-          tx(s, x0, y0 + 26, 'fixture moves', { 'font-size': W < 700 ? 8.5 : 10, fill: C.ink2 });
-        }
-        let nch = 0;
-        for (let e = 0; e < 10; e++) {
-          const k = t * 10 + e, ch = changedCols[k]; if (ch) nch++;
-          const g = el('g', {}, s);
-          M.seeds.forEach((sd, r) => {
-            el('rect', { x: x0 + e * cs + .5, y: y0 + 40 + r * rowH + .5, width: cs - 1, height: rowH - 1, fill: M.out[r][k] ? C.pass : C.fail, 'fill-opacity': ch ? 1 : 0.22 }, g);
-          });
-          el('rect', { x: x0 + e * cs, y: y0 + 40, width: cs, height: M.seeds.length * rowH, fill: 'transparent' }, g);
-          const wins = M.out.map(r => r[k]).reduce((a, c) => a + c, 0);
-          hover(g, `<b>task ${t}</b> · ${TASKS[t]}<br>stored state ${e}<br>${wins} of 7 seeds succeed${ch ? '<br><b>changes with the seed</b>' : ''}`);
-        }
-        tx(s, x0, y0 + 40 + M.seeds.length * rowH + 16, nch ? `${nch} change` : 'none change', { fill: nch ? C.ink : C.ink3, 'font-size': 10.5 });
-      }
-    }
-  }
-
-  /* ---------- three tests ---------- */
-  function barPanel(s, ox, oy, w, h, opt) {
-    const { vals, cols, labels, ymax, ticks, title, ylab, markers, lab } = opt;
-    const left = ox + 36, right = ox + w - 4, top = oy + 26, bot = oy + h - 34;
-    const y = lin(0, ymax, bot, top), n = vals.length, bw = (right - left) / n;
-    tx(s, (left + right) / 2, oy + 12, title, { 'text-anchor': 'middle', fill: '#555', 'font-size': 12.5 });
-    yAxis(s, null, y, ticks, String, left, right, null);
-    if (ylab) tx(s, ox + 6, (top + bot) / 2, ylab, { 'text-anchor': 'middle', fill: '#555', 'font-size': 11.5, transform: `rotate(-90 ${ox + 6} ${(top + bot) / 2})` });
-    vals.forEach((v, i) => {
-      const cx = left + bw * (i + .5), g = el('g', {}, s);
-      const hh = Math.max(v ? 0 : 2, bot - y(v));
-      el('rect', { x: cx - bw * .32, y: bot - hh, width: bw * .64, height: hh, fill: cols[i] }, g);
-      if (markers) { const my = y(markers[i]); el('rect', { x: cx - 4, y: my - 4, width: 8, height: 8, transform: `rotate(45 ${cx} ${my})`, fill: C.page, stroke: C.ink, 'stroke-width': 1.3 }, g); }
-      String(labels[i]).split('\n').forEach((ln, k) => tx(s, cx, bot + 15 + k * 13, ln, { 'text-anchor': 'middle', 'font-size': 10.5, fill: k ? C.ink3 : C.ink2 }));
-      el('rect', { x: cx - bw / 2, y: top, width: bw, height: bot - top, fill: 'transparent' }, g);
-      hover(g, lab(i));
-    });
-    el('line', { x1: left, x2: right, y1: bot, y2: bot, stroke: C.ink }, s);
-  }
-  function drawTests() {
-    const host = document.getElementById('tests'), W = host.clientWidth, Mx = D.mech, narrow = W < 760;
-    const ph = 230, cols = Mx.moves.map(m => m ? C.dark : C.stone);
-    const widths = narrow ? [W, W, W] : [W * .37, W * .37, W * .26];
-    const H = narrow ? ph * 3 + 30 : ph; const s = svgIn(host, W, H, 'Changed scenes per task in three tests');
-    let ox = 0, oy = 0;
-    const pos = i => { if (narrow) return [0, i * (ph + 15)]; const p = [ox, 0]; ox += widths[i]; return p; };
-    const tl = i => `task ${i}`;
-    let p = pos(0);
-    barPanel(s, p[0], p[1], widths[0] - 10, ph, { vals: Mx.fast, cols, labels: Mx.fast.map((_, i) => i), ymax: 10, ticks: [0, 5, 10], title: 'π0-FAST, seven seeds', ylab: 'changed scenes (of 10)',
-      lab: i => `<b>${tl(i)}</b> · ${TASKS[i]}<br>${Mx.fast[i]} of 10 scenes change<br>${Mx.moves[i] ? 'fixture moves with the seed' : 'no seed-dependent fixture'}` });
-    p = pos(1);
-    barPanel(s, p[0], p[1], widths[1] - 10, ph, { vals: Mx.sim, cols, labels: Mx.sim.map((_, i) => i), ymax: 10, ticks: [0, 5, 10], title: 'π0, simulator seed only', markers: Mx.pol,
-      lab: i => `<b>${tl(i)}</b> · ${TASKS[i]}<br>simulator seed only: ${Mx.sim[i]} change<br>policy seed only: ${Mx.pol[i]} change` });
-    p = pos(2);
-    const dl = Mx.demo.map(d => d.label.split(':')[0] + '\n' + ({ 'soup in basket': 'soup', 'turn on the stove': 'stove', 'open middle drawer': 'drawer', 'soup + sauce in basket': 'soup+sauce', 'bowl in drawer, close it': 'bowl' })[d.label.split(': ')[1]]);
-    barPanel(s, p[0], p[1], widths[2], ph, { vals: Mx.demo.map(d => d.flips), cols: Mx.demo.map(d => d.moves ? C.dark : C.stone), labels: dl, ymax: 30, ticks: [0, 10, 20, 30], title: 'Demos, 20 seeds, no policy', ylab: narrow ? 'flipped (of 50)' : null,
-      lab: i => `<b>${Mx.demo[i].label}</b><br>${Mx.demo[i].flips} of ${Mx.demo[i].n} demonstrations change outcome` });
-    tx(s, narrow ? W / 2 : W * .37 - 5, (narrow ? ph : ph) - 6, '', {});
-    if (!narrow) { tx(s, W * .185, ph - 4, 'LIBERO-Long task', { 'text-anchor': 'middle', fill: '#555', 'font-size': 11.5 }); tx(s, W * .555, ph - 4, 'LIBERO-Long task', { 'text-anchor': 'middle', fill: '#555', 'font-size': 11.5 }); }
-  }
-
-  /* ---------- layouts ---------- */
-  function drawLayouts() {
-    const host = document.getElementById('layouts'), W = host.clientWidth, L = D.layouts, n = L.length;
-    const narrow = W < 600, pw = narrow ? Math.min(W, 300) : (W - 20) / 3, ph = pw + 20;
-    const H = narrow ? ph * n + 10 * n : ph + 12, s = svgIn(host, W, H, 'Fixture positions in demonstrations and under evaluation seeds');
-    L.forEach((f, i) => {
-      const ox = narrow ? (W - pw) / 2 : i * (pw + 10), oy = narrow ? i * (ph + 10) : 0;
-      const left = ox + 34, right = ox + pw - 6, top = oy + 22, bot = oy + pw - 22;
-      const x = lin(-1.2, 1.2, left, right), y = lin(-1.2, 1.2, bot, top);
-      tx(s, (left + right) / 2, oy + 12, f.name, { 'text-anchor': 'middle', fill: C.ink, 'font-size': 12.5 });
-      for (const t of [-1, 0, 1]) {
-        el('line', { x1: x(t), x2: x(t), y1: top, y2: bot, stroke: C.grid }, s); el('line', { x1: left, x2: right, y1: y(t), y2: y(t), stroke: C.grid }, s);
-        tx(s, x(t), bot + 15, minus(t), { 'text-anchor': 'middle' }); tx(s, left - 6, y(t) + 4, minus(t), { 'text-anchor': 'end' });
-      }
-      el('rect', { x: left, y: top, width: right - left, height: bot - top, fill: 'none', stroke: C.ink }, s);
-      f.demos.forEach(([a, b]) => el('circle', { cx: x(a), cy: y(b), r: 3.2, fill: C.pass, 'fill-opacity': .75 }, s));
-      f.seeds.forEach(([a, b]) => { const cx = x(a), cy = y(b); el('path', { d: `M${cx - 3.5} ${cy - 3.5}L${cx + 3.5} ${cy + 3.5}M${cx + 3.5} ${cy - 3.5}L${cx - 3.5} ${cy + 3.5}`, stroke: C.fail, 'stroke-width': 1.6, fill: 'none' }, s); });
-      tx(s, (left + right) / 2, bot + 30, 'x offset (cm)', { 'text-anchor': 'middle', fill: '#555', 'font-size': 11 });
-    });
-  }
-
-  /* ---------- pinning ---------- */
-  function dotGroups(host, groups, opt) {
-    const W = host.clientWidth, H = opt.h || 260, s = svgIn(host, W, H, opt.label);
-    const left = 52, right = W - 10, top = 14, bot = H - (opt.bottom || 44), y = lin(opt.y0, opt.y1, bot, top);
-    yAxis(s, null, y, opt.ticks, v => v + (opt.unit || ''), left, right, opt.ylab, (top + bot) / 2);
+  function dots(host, groups, o) {
+    const W = host.clientWidth, H = o.h || 250, s = svgIn(host, W, H, o.label);
+    const left = 46, right = W - 6, top = 10, bot = H - (o.bottom || 44), y = lin(o.y0, o.y1, bot, top);
+    yAxis(s, y, o.ticks, v => v + '%', left, right, o.ylab, (top + bot) / 2);
     const gw = (right - left) / groups.length;
     groups.forEach((g, i) => {
-      const cx = left + gw * (i + .5), js = jitter(g.vals, Math.min(13, gw / 10));
-      if (g.ref != null) { el('line', { x1: cx - gw * .3, x2: cx + gw * .3, y1: y(g.ref), y2: y(g.ref), stroke: C.ink, 'stroke-dasharray': '2 3', 'stroke-width': 1.2 }, s); }
-      if (g.showMean !== false) el('line', { x1: cx - gw * .22, x2: cx + gw * .22, y1: y(mean(g.vals)), y2: y(mean(g.vals)), stroke: g.col, 'stroke-width': 1.5, 'stroke-opacity': .5 }, s);
+      const cx = left + gw * (i + .5), js = jitter(g.vals, Math.min(11, gw / 9));
+      if (g.ref != null) el('line', { x1: cx - gw * .32, x2: cx + gw * .32, y1: y(g.ref), y2: y(g.ref), stroke: C.ink, 'stroke-dasharray': '3 3', 'stroke-width': 1.2 }, s);
+      el('line', { x1: cx - gw * .24, x2: cx + gw * .24, y1: y(mean(g.vals)), y2: y(mean(g.vals)), stroke: g.col, 'stroke-width': 1.5, 'stroke-opacity': .45 }, s);
       g.vals.forEach((v, j) => {
-        const c = el(g.square ? 'rect' : 'circle', g.square ? { x: cx + js[j] - 4.5, y: y(v) - 4.5, width: 9, height: 9, fill: g.col } : { cx: cx + js[j], cy: y(v), r: 4.8, fill: g.col }, s);
-        if (g.tips) hover(c, g.tips[j]);
+        const c = el(g.square ? 'rect' : 'circle', g.square ? { x: cx + js[j] - 4.5, y: y(v) - 4.5, width: 9, height: 9, fill: g.col } : { cx: cx + js[j], cy: y(v), r: 4.8, fill: g.col, stroke: C.page, 'stroke-width': 1 }, s);
+        hover(c, g.tips[j]);
       });
-      const lines = g.name.split('\n');
-      lines.forEach((ln, k) => tx(s, cx, bot + 18 + k * 14, ln, { 'text-anchor': 'middle', fill: k ? C.ink3 : C.ink, 'font-size': k ? 10.5 : 11.5 }));
+      g.name.split('\n').forEach((ln, k) => tx(s, cx, bot + 19 + k * 15, ln, { 'text-anchor': 'middle', fill: k ? C.muted : C.ink, 'font-size': k ? 11.5 : 12.5 }));
     });
     el('line', { x1: left, x2: right, y1: bot, y2: bot, stroke: C.ink }, s);
-    return { s, y, left, right, top, bot, gw };
+  }
+
+  function drawRepeat() {
+    const R = D.repeat;
+    dots(document.getElementById('ch-repeat'), [
+      { name: 'default kernels', vals: R.off.rates, col: C.fail, tips: R.off.rates.map((v, i) => `run ${i + 1}, default kernels · ${v.toFixed(0)}%`) },
+      { name: 'deterministic', vals: R.on.rates, col: C.pass, tips: R.on.rates.map((v, i) => `run ${i + 1}, deterministic kernels · ${v.toFixed(0)}%`) },
+    ], { y0: 84, y1: 93, ticks: [84, 86, 88, 90, 92], ylab: 'success', label: 'Five repeats of the same command, with and without deterministic kernels', h: 230 });
   }
   function drawPin() {
-    const Mx = D.mech, host = document.getElementById('pin');
-    const seeds6 = [1000, 2000, 3000, 4000, 5000, 6000];
-    dotGroups(host, [
-      { name: 'new seed each run\nlayout from the seed', vals: Mx.unpinned, col: C.pass, tips: Mx.unpinned.map(v => `new seed · ${v.toFixed(0)}%`) },
-      { name: 'layout pinned\nsix seeds', vals: Mx.pinned, col: C.fail, tips: Mx.pinned.map(v => `pinned layout k = 7 · ${v.toFixed(0)}%`) },
-      { name: 'six other\npinned layouts', vals: Mx.layouts, col: C.fail, square: true, tips: Mx.layouts.map(v => `one pinned layout · ${v.toFixed(0)}%`) },
-    ], { y0: 82, y1: 91, ticks: [82, 84, 86, 88, 90], unit: '%', ylab: 'success', label: 'Pinning the layout: success per evaluation', h: 270 });
+    const P = D.pin;
+    dots(document.getElementById('ch-pin'), [
+      { name: 'new seed\neach run', vals: P.unpinned, col: C.fail, tips: P.unpinned.map(v => `new seed · ${v.toFixed(0)}%`) },
+      { name: 'one layout\nsix seeds', vals: P.pinned, col: C.pass, tips: P.pinned.map(v => `pinned layout · ${v.toFixed(0)}%`) },
+      { name: 'six other\nlayouts', vals: P.layouts, col: C.pass, square: true, tips: P.layouts.map(v => `one pinned layout · ${v.toFixed(0)}%`) },
+    ], { y0: 82, y1: 91, ticks: [82, 84, 86, 88, 90], ylab: 'success', label: 'Pinning the layout: success per evaluation', h: 250, bottom: 52 });
   }
-
-  /* ---------- ledger ---------- */
-  function drawLedger() {
-    const host = document.getElementById('ledger'), W = host.clientWidth, L = D.ledger, narrow = W < 720;
-    const LW = narrow ? 0 : Math.min(300, W * .3), gapP = 30, aW = (W - LW - gapP) * .44, bW = (W - LW - gapP) - aW;
-    const rowH = narrow ? 50 : 26, headH = narrow ? 30 : 30;
-    const groups = []; L.forEach(r => { if (!groups.length || groups[groups.length - 1].g !== r.group) groups.push({ g: r.group, rows: [] }); groups[groups.length - 1].rows.push(r); });
-    const H = 44 + groups.reduce((a, g) => a + headH + g.rows.length * rowH, 0) + 40, s = svgIn(host, W, H, 'Re-draw and shift of each hidden choice');
-    const ax0 = LW, ax1 = LW + aW, bx0 = LW + aW + gapP, bx1 = W - 6;
-    const x = lin(0, 2.6, ax0, ax1 - 34), xs = lin(-14, 22, bx0, bx1);
-    tx(s, (ax0 + ax1) / 2, 14, 'Re-draw (1 = a new seed)', { 'text-anchor': 'middle', fill: '#555', 'font-size': 12.5 });
-    tx(s, (bx0 + bx1) / 2, 14, 'Shift (points, 95% CI)', { 'text-anchor': 'middle', fill: '#555', 'font-size': 12.5 });
-    const top = 30, bot = H - 34;
-    for (const t of [0, 1, 2]) { el('line', { x1: x(t), x2: x(t), y1: top, y2: bot, stroke: t === 1 ? C.ink : C.grid, 'stroke-dasharray': t === 1 ? '4 3' : '', 'stroke-width': 1 }, s); tx(s, x(t), bot + 16, String(t), { 'text-anchor': 'middle' }); }
-    for (const t of [-10, 0, 10, 20]) { el('line', { x1: xs(t), x2: xs(t), y1: top, y2: bot, stroke: t === 0 ? C.ink : C.grid, 'stroke-width': 1 }, s); tx(s, xs(t), bot + 16, (t > 0 ? '+' : '') + minus(t), { 'text-anchor': 'middle' }); }
-    el('line', { x1: ax0, x2: ax1, y1: bot, y2: bot, stroke: C.ink }, s); el('line', { x1: bx0, x2: bx1, y1: bot, y2: bot, stroke: C.ink }, s);
-    let yy = 40;
-    groups.forEach(g => {
-      tx(s, 0, yy + 18, g.g, { fill: C.ink, 'font-size': 12, 'font-weight': 600 }); yy += headH;
-      g.rows.forEach(r => {
-        const cy = narrow ? yy + 32 : yy + rowH / 2, sh = r.shift, shifted = sh && (sh.lo > 0 || sh.hi < 0), col = shifted ? C.fail : C.pass;
-        const gr = el('g', {}, s);
-        el('rect', { x: 0, y: yy, width: W, height: rowH, fill: 'transparent' }, gr);
-        tx(gr, narrow ? 0 : 12, narrow ? yy + 14 : cy + 4, r.label, { fill: C.ink2, 'font-size': narrow ? 11.5 : 12 });
-        el('rect', { x: x(0), y: cy - 6, width: x(r.redraw) - x(0), height: 12, fill: col }, gr);
-        tx(gr, x(r.redraw) + 6, cy + 4, r.txt.redraw, { fill: C.ink, 'font-size': 11 });
-        let detail = `<b>${r.group}</b><br>${r.label}<br>re-draw ${r.txt.redraw} of a new seed`;
-        if (sh) {
-          el('line', { x1: xs(sh.lo), x2: xs(sh.hi), y1: cy, y2: cy, stroke: col, 'stroke-width': 2.2 }, gr);
-          el('circle', { cx: xs(sh.d), cy, r: 4.6, fill: col, stroke: C.page, 'stroke-width': 1.5 }, gr);
-          tx(gr, xs(Math.max(sh.hi, 0)) + 8, cy + 4, r.txt.d, { fill: C.ink, 'font-size': 11 });
-          detail += `<br>shift ${r.txt.d} points [${r.txt.lo}, ${r.txt.hi}]`;
-        } else {
-          tx(gr, xs(-13), cy + 4, r.label.startsWith('Re-run') ? 'same command: nothing to shift' : r.label.startsWith('openpi') ? 'two seeds: no interval' : 'each layout is its own offset', { fill: C.ink3, 'font-size': 10.5, 'font-style': 'italic' });
-        }
-        hover(gr, detail); yy += rowH;
-      });
-    });
-  }
-
-  /* ---------- machine ---------- */
-  function drawMachine() {
-    const host = document.getElementById('machine'), W = host.clientWidth, G = D.machine.gpu, P = D.machine.cpu, H = 290;
-    const s = svgIn(host, W, H, 'Success per seed on two machines'), left = 48, right = W - 8, top = 26, bot = H - 58;
-    const y = lin(60, 82, bot, top), all = G.concat(P), n = all.length, gapX = 18, cw = (right - left - gapX) / n;
-    yAxis(s, null, y, [60, 65, 70, 75, 80], v => v + '%', left, right, 'success', (top + bot) / 2);
-    const legend = [['RTX 4090', C.pass], ['RTX 3060', C.fail]];
-    legend.forEach(([t, c], i) => { el('circle', { cx: left + 10 + i * 100, cy: 10, r: 4.5, fill: c }, s); tx(s, left + 20 + i * 100, 14, t, { fill: C.ink2 }); });
-    all.forEach((r, i) => {
-      const cx = left + cw * (i + .5) + (i >= G.length ? gapX : 0), g = el('g', {}, s);
-      el('line', { x1: cx - 5, x2: cx + 5, y1: y(r.a), y2: y(r.b), stroke: C.stone, 'stroke-width': 1.5 }, g);
-      el('circle', { cx: cx - 5, cy: y(r.a), r: 4.5, fill: C.pass }, g); el('circle', { cx: cx + 5, cy: y(r.b), r: 4.5, fill: C.fail }, g);
-      el('rect', { x: cx - cw / 2, y: top, width: cw, height: bot - top, fill: 'transparent' }, g);
-      tx(s, cx, bot + 15, String(r.seed / 1000), { 'text-anchor': 'middle', 'font-size': 10.5 });
-      hover(g, `seed ${r.seed} · ${i >= G.length ? 'CPU' : 'GPU'} rendering<br>RTX 4090 ${r.a.toFixed(0)}% · RTX 3060 ${r.b.toFixed(0)}%${r.flips != null ? `<br>${r.flips} scenes flip` : ''}`);
-    });
-    el('line', { x1: left, x2: right, y1: bot, y2: bot, stroke: C.ink }, s);
-    const gx = left + cw * G.length / 2, cxm = left + gapX + cw * (G.length + P.length / 2);
-    tx(s, gx, bot + 32, 'GPU render', { 'text-anchor': 'middle', fill: C.ink, 'font-size': 11.5 }); tx(s, cxm, bot + 32, 'CPU render', { 'text-anchor': 'middle', fill: C.ink, 'font-size': 11.5 });
-    tx(s, (left + right) / 2, bot + 48, 'seed (×1000)', { 'text-anchor': 'middle', fill: '#555', 'font-size': 11 });
-  }
-
-  /* ---------- SimplerEnv ---------- */
-  function drawSimpler() {
-    const host = document.getElementById('simpler'), S = D.simpler, gs = [];
+  function drawRender() {
+    const S = D.simpler, g = [];
     S.forEach(p => {
-      gs.push({ name: p.policy + '\nGPU render', vals: p.gpu, col: C.pass, ref: p.reported, tips: p.gpu.map(v => `${p.policy} · GPU render · ${v.toFixed(1)}%`) });
-      gs.push({ name: p.policy + '\nCPU render', vals: p.cpu, col: C.fail, ref: p.reported, tips: p.cpu.map(v => `${p.policy} · CPU render · ${v.toFixed(1)}%`) });
+      const nm = p.policy === 'Qwen3-VL-GR00T' ? 'GR00T' : p.policy;
+      g.push({ name: `${nm}\nGPU`, vals: p.gpu, col: C.pass, ref: p.reported, tips: p.gpu.map(v => `${p.policy}, GPU rendering · ${f1(v)}%`) });
+      g.push({ name: `${nm}\nCPU`, vals: p.cpu, col: C.fail, ref: p.reported, tips: p.cpu.map(v => `${p.policy}, CPU rendering · ${f1(v)}%`) });
     });
-    gs.forEach(g => g.name = g.name.replace('Qwen3-VL-GR00T', 'GR00T'));
-    const r = dotGroups(host, gs, { y0: 40, y1: 100, ticks: [40, 50, 60, 70, 80, 90, 100], unit: '%', ylab: 'success', label: 'SimplerEnv success per repeat', h: 290, bottom: 58 });
-    tx(r.s, r.right, r.bot + 50, '- - - reported by vla-eval', { 'text-anchor': 'end', 'font-size': 10.5 });
+    dots(document.getElementById('ch-render'), g, { y0: 40, y1: 100, ticks: [40, 60, 80, 100], ylab: 'success', label: 'SimplerEnv success with GPU and CPU rendering', h: 250, bottom: 52 });
   }
-
-  /* ---------- settling ---------- */
-  function drawSettling() {
-    const host = document.getElementById('settling'), W = host.clientWidth, S = D.settling, narrow = W < 640;
-    const pw = narrow ? W : (W - 30) / 2, ph = 250, H = narrow ? ph * 2 + 20 : ph, s = svgIn(host, W, H, 'Settling steps and MuJoCo version');
-    [['task5', 'Task 5'], ['others', 'The other nine tasks']].forEach(([part, name], i) => {
-      const ox = narrow ? 0 : i * (pw + 30), oy = narrow ? i * (ph + 20) : 0, left = ox + 50, right = ox + pw - 10, top = oy + 26, bot = oy + ph - 34;
-      const y = lin(40, 100, bot, top), x = lin(0, 1, left + (right - left) * .2, right - (right - left) * .2);
-      tx(s, (left + right) / 2, oy + 12, name, { 'text-anchor': 'middle', fill: C.ink, 'font-size': 12.5 });
-      yAxis(s, null, y, [40, 60, 80, 100], v => v + '%', left, right, i === 0 || narrow ? 'success' : null, (top + bot) / 2 + (narrow ? 0 : 0));
+  function drawSettle() {
+    const host = document.getElementById('ch-settle'), W = host.clientWidth, S = D.settling, narrow = W < 560;
+    const pw = narrow ? W : (W - 30) / 2, ph = 240, H = narrow ? ph * 2 + 24 : ph, s = svgIn(host, W, H, 'Settling steps and MuJoCo version');
+    [['task5', 'task 5 (the bowl)'], ['others', 'the other nine tasks']].forEach(([part, name], i) => {
+      const ox = narrow ? 0 : i * (pw + 30), oy = narrow ? i * (ph + 24) : 0, left = ox + 46, right = ox + pw - 70, top = oy + 26, bot = oy + ph - 32;
+      const y = lin(40, 100, bot, top), x = lin(0, 1, left + (right - left) * .2, right - (right - left) * .15);
+      tx(s, (left + right) / 2, oy + 12, name, { 'text-anchor': 'middle', fill: C.ink, 'font-size': 13 });
+      yAxis(s, y, [40, 60, 80, 100], v => v + '%', left, right + 56, i === 0 || narrow ? 'success' : null, (top + bot) / 2);
       [['3.8.1', C.fail, -7], ['3.3.7', C.pass, 7]].forEach(([v, col, off]) => {
         const a = S[`${v}|10|${part}`], b = S[`${v}|40|${part}`];
-        [a, b].forEach((vals, j) => { const js = jitter(vals, 4); vals.forEach((u, k) => { const c = el('circle', { cx: x(j) + off + js[k], cy: y(u), r: 3, fill: col, 'fill-opacity': .45 }, s); hover(c, `MuJoCo ${v} · ${j ? 40 : 10} settling steps<br>${name.toLowerCase()} · ${u.toFixed(1)}%`); }); });
+        [a, b].forEach((vals, j) => { const js = jitter(vals, 3.5); vals.forEach((u, k) => { const c = el('circle', { cx: x(j) + off + js[k], cy: y(u), r: 3, fill: col, 'fill-opacity': .4 }, s); hover(c, `MuJoCo ${v} · ${j ? 40 : 10} settling steps<br>${name} · ${f1(u)}%`); }); });
         el('line', { x1: x(0) + off, x2: x(1) + off, y1: y(mean(a)), y2: y(mean(b)), stroke: col, 'stroke-width': 2 }, s);
         [[0, a], [1, b]].forEach(([j, vals]) => el('circle', { cx: x(j) + off, cy: y(mean(vals)), r: 5, fill: col, stroke: C.page, 'stroke-width': 1.5 }, s));
         const other = S[`${v === '3.8.1' ? '3.3.7' : '3.8.1'}|40|${part}`], close = Math.abs(y(mean(other)) - y(mean(b))) < 14;
-        tx(s, x(1) + 16, y(mean(b)) + 4 + (close ? (mean(b) < mean(other) ? 8 : -8) : 0), `${f1(mean(b))}%`, { fill: col, 'font-size': 11 });
+        tx(s, x(1) + 24, y(mean(b)) + 4 + (close ? (mean(b) < mean(other) ? 8 : -8) : 0), `${v}: ${f1(mean(b))}%`, { fill: col, 'font-size': 11.5 });
       });
-      tx(s, x(0), bot + 18, '10 steps', { 'text-anchor': 'middle', fill: C.ink, 'font-size': 11.5 }); tx(s, x(1), bot + 18, '40 steps', { 'text-anchor': 'middle', fill: C.ink, 'font-size': 11.5 });
-      el('line', { x1: left, x2: right, y1: bot, y2: bot, stroke: C.ink }, s);
+      tx(s, x(0), bot + 19, '10 steps', { 'text-anchor': 'middle', fill: C.ink, 'font-size': 12 }); tx(s, x(1), bot + 19, '40 steps', { 'text-anchor': 'middle', fill: C.ink, 'font-size': 12 });
+      el('line', { x1: left, x2: right + 56, y1: bot, y2: bot, stroke: C.ink }, s);
     });
   }
-
-  /* ---------- resolution ---------- */
-  function drawMDE() {
-    const host = document.getElementById('mde'), W = host.clientWidth, R = D.resolution, H = 270;
-    const s = svgIn(host, W, H, 'Smallest detectable difference against episodes per policy'), left = 48, right = W - 10, top = 14, bot = H - 44;
-    const x = lin(100, 2000, left, right), y = lin(0, 8.6, bot, top);
-    yAxis(s, null, y, [0, 2, 4, 6, 8], String, left, right, 'points', (top + bot) / 2);
-    const band = R.N.map((n, i) => `${x(n)},${y(R.hi[i])}`).join(' ') + ' ' + R.N.map((n, i) => `${x(n)},${y(R.lo[i])}`).reverse().join(' ');
-    const cp = el('clipPath', { id: 'mdeclip' }, el('defs', {}, s)); el('rect', { x: left, y: top, width: right - left, height: bot - top }, cp);
-    const gc = el('g', { 'clip-path': 'url(#mdeclip)' }, s);
-    el('polygon', { points: band, fill: C.pass, 'fill-opacity': .16 }, gc);
-    el('polyline', { points: R.N.map((n, i) => `${x(n)},${y(R.med[i])}`).join(' '), fill: 'none', stroke: C.pass, 'stroke-width': 2 }, gc);
-    [[300, 'LeRobot 100×3'], [500, 'openpi 500×1']].forEach(([n, t], k) => {
-      const i = R.N.indexOf(n); const g = el('g', {}, s);
-      el('line', { x1: x(n), x2: x(n), y1: top, y2: bot, stroke: C.ink, 'stroke-dasharray': '2 3' }, g);
-      tx(g, x(n) + 6, top + 12 + k * 16, t, { fill: C.ink, 'font-size': 11 });
-      el('rect', { x: x(n) - 8, y: top, width: 16, height: bot - top, fill: 'transparent' }, g);
-      hover(g, `<b>${t}</b> · ${n} episodes<br>detectable: ${R.lo[i].toFixed(1)}–${R.hi[i].toFixed(1)} points (median ${R.med[i].toFixed(1)})`);
-    });
-    for (const t of [100, 500, 1000, 1500, 2000]) tx(s, x(t), bot + 16, String(t), { 'text-anchor': 'middle' });
-    el('line', { x1: left, x2: right, y1: bot, y2: bot, stroke: C.ink }, s);
-    tx(s, (left + right) / 2, bot + 34, 'episodes per policy', { 'text-anchor': 'middle', fill: '#555', 'font-size': 11 });
+  const TASKS = ['soup and sauce in the basket', 'cheese and butter in the basket', 'stove on, moka pot on it', 'bowl in the drawer, close it', 'mugs on two plates',
+    'book into the caddy', 'mug on plate, pudding right', 'soup and cheese in the basket', 'both moka pots on the stove', 'mug in the microwave, close it'];
+  function drawMatrix() {
+    const host = document.getElementById('ch-matrix'), W = host.clientWidth, M = D.matrix;
+    const per = W < 700 ? 5 : 10, LW = W < 700 ? 34 : 70, gap = W < 700 ? 6 : 9;
+    const cs = Math.min(14, (W - LW - gap * (per - 1)) / (per * 10)), rowH = Math.max(cs, W < 700 ? 10 : 14);
+    const bandH = 42 + M.seeds.length * rowH + 28, bands = 10 / per, H = bands * bandH;
+    const s = svgIn(host, W, H, 'Outcome of every LIBERO-Long scene under seven seeds');
+    const changed = []; for (let k = 0; k < 100; k++) changed.push(new Set(M.out.map(r => r[k])).size > 1);
+    for (let b = 0; b < bands; b++) {
+      const y0 = b * bandH;
+      M.seeds.forEach((sd, r) => tx(s, LW - 8, y0 + 42 + r * rowH + rowH * .78, W < 700 ? String(sd) : 'seed ' + sd, { 'text-anchor': 'end', 'font-size': W < 700 ? 9 : 11 }));
+      for (let ti = 0; ti < per; ti++) {
+        const t = b * per + ti, x0 = LW + ti * (cs * 10 + gap);
+        tx(s, x0, y0 + 14, 'task ' + t, { fill: C.ink, 'font-size': 12 });
+        if (M.moves[t]) { el('line', { x1: x0, x2: x0 + cs * 10, y1: y0 + 32, y2: y0 + 32, stroke: C.ink, 'stroke-width': 1.5 }, s); tx(s, x0, y0 + 28, 'fixture moves', { 'font-size': W < 700 ? 8.5 : 10.5, fill: C.ink2 }); }
+        let n = 0;
+        for (let e = 0; e < 10; e++) {
+          const k = t * 10 + e, ch = changed[k]; if (ch) n++;
+          const g = el('g', {}, s);
+          M.seeds.forEach((sd, r) => el('rect', { x: x0 + e * cs + .5, y: y0 + 42 + r * rowH + .5, width: cs - 1, height: rowH - 1, fill: M.out[r][k] ? C.pass : C.fail, 'fill-opacity': ch ? 1 : .2 }, g));
+          el('rect', { x: x0 + e * cs, y: y0 + 42, width: cs, height: M.seeds.length * rowH, fill: 'transparent' }, g);
+          const wins = M.out.reduce((a, r) => a + r[k], 0);
+          hover(g, `<b>task ${t}</b> · ${TASKS[t]}<br>stored scene ${e}<br>${wins} of 7 seeds succeed${ch ? '<br><b>changes with the seed</b>' : ''}`);
+        }
+        tx(s, x0, y0 + 42 + M.seeds.length * rowH + 16, n ? `${n} change` : 'none change', { fill: n ? C.ink : C.muted, 'font-size': 11 });
+      }
+    }
   }
-  function drawPairs() {
-    const host = document.getElementById('pairs'), P = D.resolution.pairs, gs = [];
-    P.forEach(p => {
-      gs.push({ name: p.a, vals: p.av, col: C.fail, tips: p.av.map(v => `${p.a} · ${v.toFixed(0)}%`) });
-      gs.push({ name: p.b.replace(' (', '\n('), vals: p.bv, col: C.pass, tips: p.bv.map(v => `${p.b} · ${v.toFixed(0)}%`) });
-    });
-    dotGroups(host, gs, { y0: 80, y1: 99, ticks: [80, 85, 90, 95], unit: '%', ylab: 'success, one evaluation', label: 'Single-evaluation scores of two near-tied pairs', h: 270, bottom: 50 });
-    const p = P[0]; let w = 0, t = 0, l = 0;
-    p.av.forEach(a => p.bv.forEach(b => { if (a > b) w++; else if (a === b) t++; else l++; }));
-    const n = p.av.length * p.bv.length, pc = v => Math.round(100 * v / n);
-    document.getElementById('pairs-cap').textContent = `LIBERO-Long, same harness. π0-FAST and π0.5 (chunk 50) average ${Math.abs(mean(p.av) - mean(p.bv)).toFixed(1)} points apart; across all ${n} pairings of single evaluations, π0-FAST wins ${pc(w)}%, ties ${pc(t)}% and loses ${pc(l)}%.`;
-  }
-
-  const draws = [drawMatrix, drawTests, drawLayouts, drawPin, drawLedger, drawMachine, drawSimpler, drawSettling, drawMDE, drawPairs];
-  function drawAll() { for (const f of draws) { try { f(); } catch (e) { console.error(e); } } }
+  const draws = [drawRepeat, drawMatrix, drawPin, drawSettle, drawRender];
+  const drawAll = () => draws.forEach(f => { try { f(); } catch (e) { console.error(e); } });
   drawAll();
-  let lastW = innerWidth, rt;
-  addEventListener('resize', () => { if (innerWidth === lastW) return; lastW = innerWidth; clearTimeout(rt); rt = setTimeout(drawAll, 120); });
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(drawAll, 150); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawAll);
 
-  /* ---------- videos ---------- */
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function syncGroup(vids, onTick, onEnd) {
-    let playing = !reduce, rate = 1, waiting = null;
-    const start = () => { clearTimeout(waiting); vids.forEach(v => { v.currentTime = 0; v.playbackRate = rate; if (playing) v.play().catch(() => {}); }); };
-    vids.forEach(v => v.addEventListener('ended', () => {
-      onEnd && onEnd(v);
-      if (vids.every(u => u.ended) && playing) waiting = setTimeout(start, 1600);
-    }));
-    if (onTick) vids[0].addEventListener('timeupdate', () => onTick());
-    return {
-      start, toggle() { playing = !playing; vids.forEach(v => playing ? (v.ended || v.play().catch(() => {})) : v.pause()); if (playing && vids.every(u => u.ended)) start(); return playing; },
-      speed(r) { rate = r; vids.forEach(v => v.playbackRate = r); }, get playing() { return playing; }
+  /* clip groups: play together at half speed, show each result as its clip ends, loop when all have ended */
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('[data-group]').forEach(grp => {
+    const vids = [...grp.querySelectorAll('video')], fig = grp.parentElement;
+    const tog = fig.querySelector('[data-toggle]'), rep = fig.querySelector('[data-restart]');
+    let ended = 0, timer = null, visible = false, paused = still;
+    const play = () => vids.forEach(v => { v.playbackRate = .5; v.play().catch(() => {}); });
+    const restart = () => {
+      clearTimeout(timer); ended = 0;
+      vids.forEach(v => { v.closest('.tile').classList.remove('done'); v.currentTime = 0; v.playbackRate = .5; });
+      if (!paused && visible) play();
     };
-  }
-  function setBadge(b, show) { b.classList.toggle('pending', !show); b.classList.toggle('fail', show && b.dataset.out === '0'); b.classList.toggle('pass', show && b.dataset.out === '1'); b.textContent = show ? (b.dataset.out === '1' ? 'Success' : 'Failure') : 'Running'; }
-
-  // hero
-  const tv = [...document.querySelectorAll('#teaser video')], tb = [...document.querySelectorAll('#teaser .badge.r')];
-  const bar = document.querySelector('#teaser .progress i');
-  const longest = () => Math.max(...tv.map(v => v.duration || 0));
-  tb.forEach(b => setBadge(b, false));
-  const hero = syncGroup(tv, () => { const L = longest(); if (L) bar.style.width = (100 * Math.max(...tv.map(v => v.currentTime)) / L) + '%'; }, v => setBadge(tb[tv.indexOf(v)], true));
-  tv.forEach((v, i) => v.addEventListener('play', () => { if (v.currentTime < .05) setBadge(tb[i], false); }));
-  const tplay = document.getElementById('tplay'), tspeed = document.getElementById('tspeed');
-  tplay.addEventListener('click', () => { tplay.textContent = hero.toggle() ? 'Pause' : 'Play'; });
-  tspeed.addEventListener('click', () => { const r = tspeed.textContent === '1×' ? .5 : 1; hero.speed(r); tspeed.textContent = r === 1 ? '1×' : '0.5×'; });
-  if (reduce) { tplay.textContent = 'Play'; tv.forEach(v => v.addEventListener('loadeddata', () => { v.currentTime = 0; }, { once: true })); }
-  else hero.start();
-
-  // strip of seven
-  const stripHost = document.getElementById('strip');
-  Object.keys(D.hero).sort().forEach(sd => {
-    const ok = D.hero[sd] === 1;
-    stripHost.insertAdjacentHTML('beforeend', `<figure class="cell"><div class="stage"><video src="assets/seed${sd}.mp4" muted playsinline preload="auto" aria-label="Rollout under seed ${sd}"></video><span class="badge r pending" data-out="${ok ? 1 : 0}">Running</span></div><figcaption>seed ${sd}</figcaption></figure>`);
+    vids.forEach(v => {
+      v.addEventListener('loadedmetadata', () => { v.playbackRate = .5; });
+      v.addEventListener('ended', () => {
+        v.closest('.tile').classList.add('done');
+        if (++ended === vids.length) timer = setTimeout(() => { if (!paused && visible) restart(); }, 2200);
+      });
+    });
+    const label = () => { if (tog) tog.textContent = paused ? 'play' : 'pause'; };
+    if (tog) tog.addEventListener('click', () => {
+      paused = !paused; label();
+      if (paused) vids.forEach(v => v.pause()); else if (ended === vids.length) restart(); else vids.forEach(v => { if (!v.ended) { v.playbackRate = .5; v.play().catch(() => {}); } });
+    });
+    if (rep) rep.addEventListener('click', () => { paused = false; label(); restart(); });
+    label();
+    new IntersectionObserver(es => es.forEach(en => {
+      visible = en.isIntersecting;
+      if (!visible) vids.forEach(v => v.pause());
+      else if (!paused) { if (ended === vids.length) restart(); else vids.forEach(v => { if (!v.ended) { v.playbackRate = .5; v.play().catch(() => {}); } }); }
+    }), { threshold: .35 }).observe(grp);
   });
-  const sv = [...stripHost.querySelectorAll('video')], sb = [...stripHost.querySelectorAll('.badge.r')];
-  const strip = syncGroup(sv, null, v => setBadge(sb[sv.indexOf(v)], true));
-  sv.forEach((v, i) => v.addEventListener('play', () => { if (v.currentTime < .05) setBadge(sb[i], false); }));
-  const splay = document.getElementById('splay'), sslow = document.getElementById('sslow');
-  splay.addEventListener('click', () => { splay.textContent = strip.toggle() ? 'Pause' : 'Play'; });
-  document.getElementById('srestart').addEventListener('click', () => { sb.forEach(b => setBadge(b, false)); strip.start(); });
-  sslow.addEventListener('click', () => { const on = sslow.getAttribute('aria-pressed') !== 'true'; sslow.setAttribute('aria-pressed', on); strip.speed(on ? .5 : 1); });
-  if (reduce) splay.textContent = 'Play';
-  else if ('IntersectionObserver' in window) {
-    let started = false;
-    new IntersectionObserver(es => { if (es[0].isIntersecting && !started) { started = true; strip.start(); } }, { threshold: .3 }).observe(stripHost);
-  } else strip.start();
 
-  /* ---------- compare slider ---------- */
-  const stage = document.getElementById('compare'), clip = stage.querySelector('.compare-clip'), handle = stage.querySelector('.compare-handle');
-  function setPos(p) { p = Math.max(0, Math.min(100, p)); clip.style.clipPath = `inset(0 ${100 - p}% 0 0)`; handle.style.left = p + '%'; stage.setAttribute('aria-valuenow', Math.round(p)); }
-  let drag = false;
-  const fromEvt = e => { const r = stage.getBoundingClientRect(); setPos(100 * (e.clientX - r.left) / r.width); };
-  stage.addEventListener('pointerdown', e => { drag = true; stage.setPointerCapture(e.pointerId); fromEvt(e); });
-  stage.addEventListener('pointermove', e => { if (drag || e.pointerType === 'mouse') fromEvt(e); });
-  stage.addEventListener('pointerup', () => { drag = false; });
-  stage.addEventListener('keydown', e => { const v = +stage.getAttribute('aria-valuenow'); if (e.key === 'ArrowLeft') { setPos(v - 4); e.preventDefault(); } if (e.key === 'ArrowRight') { setPos(v + 4); e.preventDefault(); } });
-  setPos(50);
-
-  /* ---------- side nav ---------- */
-  const links = [...document.querySelectorAll('.side-nav a')], secs = links.map(a => document.querySelector(a.getAttribute('href')));
-  addEventListener('scroll', () => {
-    let k = 0; secs.forEach((s, i) => { if (s.getBoundingClientRect().top < innerHeight * .35) k = i; });
-    links.forEach((a, i) => a.classList.toggle('active', i === k));
-  }, { passive: true });
+  /* divider over the two first frames */
+  const cmp = document.getElementById('compare');
+  if (cmp) {
+    const clip = cmp.querySelector('.clip'), handle = cmp.querySelector('.handle'), range = cmp.querySelector('input');
+    const set = p => { p = Math.max(0, Math.min(100, p)); clip.style.clipPath = `inset(0 ${100 - p}% 0 0)`; handle.style.left = p + '%'; range.value = Math.round(p); };
+    const at = e => { const r = cmp.getBoundingClientRect(); set((e.clientX - r.left) / r.width * 100); };
+    let drag = false;
+    cmp.addEventListener('pointerdown', e => { drag = true; cmp.setPointerCapture(e.pointerId); at(e); });
+    cmp.addEventListener('pointermove', e => { if (drag) at(e); });
+    cmp.addEventListener('pointerup', () => { drag = false; });
+    range.addEventListener('input', () => set(+range.value));
+  }
 })();
 </script>
 </body>
