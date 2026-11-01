@@ -14,8 +14,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/charis-sil@5.3.0/700.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/charis-sil@5.3.0/400-italic.css">
 <style>
-/* One white page in the portfolio's type (Charis SIL). Writing on the left, the clips beside it on wide screens;
-   everything stacks in story order on phones. */
+/* One white page in the portfolio's type (Charis SIL). A single centred reading column; clips and charts sit in the flow,
+   and the wide ones (seed grid, outcome matrix, pinned clips, settling stills) step out to 960px. */
 :root {
   --page: #ffffff;
   --ink: #1f1c19;
@@ -33,7 +33,7 @@
 html { background: var(--page); scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body { margin: 0; background: var(--page); color: var(--ink); font-family: var(--serif); padding: 40px 40px 70px; }
-.page { max-width: 1140px; margin: 0 auto; }
+.page { max-width: 960px; margin: 0 auto; }
 a { color: var(--link); text-decoration: underline; text-decoration-color: #b9c8da; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 a:hover { text-decoration-color: currentColor; }
 :focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
@@ -46,38 +46,40 @@ a:hover { text-decoration-color: currentColor; }
 .top .home { font-weight: 700; font-size: 19px; }
 .top .note { color: var(--muted); font-size: 14px; }
 
-h1 { font-size: clamp(40px, 5vw, 60px); font-weight: 700; line-height: 1.04; letter-spacing: -1.4px; margin: 0 0 18px; max-width: 900px; }
+h1 { font-size: clamp(38px, 5vw, 54px); font-weight: 700; line-height: 1.04; letter-spacing: -1.4px; margin: 0 0 18px; max-width: 900px; }
 .dek { font-size: 22px; line-height: 1.45; color: var(--ink-2); margin: 0 0 14px; max-width: 680px; }
 .byline { font-size: 14px; color: var(--muted); letter-spacing: .3px; margin: 0 0 8px; }
-h2 { font-size: 32px; font-weight: 700; line-height: 1.15; letter-spacing: -.5px; margin: 76px 0 18px; max-width: 760px; scroll-margin-top: 24px; }
-h3 { font-size: 22px; font-weight: 700; line-height: 1.3; margin: 44px 0 10px; max-width: 680px; }
+h2 { font-size: 32px; font-weight: 700; line-height: 1.15; letter-spacing: -.5px; margin: 62px 0 18px; max-width: 760px; scroll-margin-top: 24px; }
+h3 { font-size: 22px; font-weight: 700; line-height: 1.3; margin: 40px 0 10px; max-width: 680px; }
 p { font-size: 18px; line-height: 1.65; margin: 0 0 17px; }
 .prose, article > p { max-width: 680px; }
 .prose p:last-child { margin-bottom: 0; }
 em { font-style: italic; }
 sup { font-size: 11px; }
 
-/* writing beside its media */
-.row { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 40px; align-items: start; margin: 26px 0 30px; }
-.row .side { position: sticky; top: 28px; min-width: 0; }
-.row .prose { min-width: 0; }
-.opening { margin-top: 36px; }
-@media (max-width: 960px) {
-  .row { grid-template-columns: 1fr; gap: 22px; }
-  .row .side { position: static; max-width: 560px; }
-}
+/* one centred reading column; figures sit in the flow, wide ones step out to 960px */
+.page article > * { max-width: 680px; margin-left: auto; margin-right: auto; }
+.page article > .wide { max-width: 960px; }
+.top, footer { max-width: 680px; margin-left: auto; margin-right: auto; }
+.opening { margin-top: 30px; }
 
-figure { margin: 0; min-width: 0; }
-figcaption { color: var(--muted); font-size: 14.5px; line-height: 1.5; margin-top: 11px; max-width: 640px; }
+figure { margin: 26px 0 34px; min-width: 0; }
+figcaption { color: var(--muted); font-size: 14.5px; line-height: 1.5; margin-top: 10px; max-width: 640px; }
 figcaption .mode { display: block; margin-top: 4px; font-size: 12.5px; letter-spacing: .2px; }
-.wide { margin: 30px 0 34px; }
+.wide { margin-top: 30px; margin-bottom: 38px; }
+.wide > figcaption, .wide > .cliptools { max-width: 680px; margin-left: auto; margin-right: auto; }
 
 /* clips: plain frames, a result label when a clip ends */
 .clips { display: grid; gap: 6px; }
 .clips.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .clips.c4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .clips.c7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
-@media (max-width: 760px) { .clips.c7 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+/* seven clips on a narrow screen: 3 on top, 4 below, both rows full width */
+@media (max-width: 760px) {
+  .clips.c7 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .clips.c7 .tile { grid-column: span 3; }
+  .clips.c7 .tile:nth-child(-n+3) { grid-column: span 4; }
+}
 @media (max-width: 420px) { .clips.c4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .tile { position: relative; background: var(--well); line-height: 0; }
 .tile video, .tile img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: cover; }
@@ -99,10 +101,11 @@ figcaption .mode { display: block; margin-top: 4px; font-size: 12.5px; letter-sp
 .compare .tag { position: absolute; top: 6px; font-size: 11.5px; line-height: 1.2; color: #fff; background: rgba(20, 18, 16, .62); padding: 2px 6px; pointer-events: none; }
 .compare .tag.l { left: 6px; } .compare .tag.r { right: 6px; }
 .compare input { position: absolute; inset: auto 0 0 0; width: 100%; opacity: 0; height: 24px; cursor: col-resize; }
-.inset { max-width: 340px; margin: 26px 0 0; }
-@media (min-width: 961px) { .row-diff > .prose { grid-column: 1; grid-row: 1; } .row-diff > .side { grid-column: 2; grid-row: 1 / span 2; } .row-diff > .inset { grid-column: 1; grid-row: 2; margin-top: 4px; } }
-.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.stills { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; margin-top: 26px; margin-bottom: 34px; }
+.duo figure { margin: 0; }
+@media (max-width: 520px) { .duo { grid-template-columns: 1fr; gap: 22px; } }
+.stills { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+@media (max-width: 560px) { .stills { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .stills img { aspect-ratio: 4 / 3; }
 
 /* charts */
@@ -130,12 +133,13 @@ details dt { color: var(--muted); }
 details dd { margin: 0; }
 @media (max-width: 560px) { details dl { grid-template-columns: 1fr; gap: 2px; } details dd { margin-bottom: 10px; } }
 
-footer { margin-top: 70px; padding-top: 18px; border-top: 1px solid var(--rule); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; font-size: 14px; color: var(--muted); }
+footer { margin-top: 70px; margin-bottom: 0; padding-top: 18px; border-top: 1px solid var(--rule); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; font-size: 14px; color: var(--muted); }
 footer a { color: var(--muted); }
 
 @media (max-width: 640px) {
   body { padding: 22px 16px 50px; }
   .top { margin-bottom: 40px; }
+  .wide { margin-top: 24px; margin-bottom: 30px; }
   h1 { letter-spacing: -.8px; }
   .dek { font-size: 19px; }
   h2 { font-size: 27px; margin-top: 58px; }
@@ -158,13 +162,10 @@ footer a { color: var(--muted); }
 <p class="dek">what 521 evaluations of robot policies in simulation taught me about where a success rate comes from.</p>
 <p class="byline">sahil apage · october 2026</p>
 
-<div class="row opening">
-  <div class="prose">
-    <p>this started with a boring check. i had π0.5 running on <a href="https://libero-project.github.io" title="LIBERO — libero-project.github.io">LIBERO</a> through <a href="https://github.com/huggingface/lerobot" title="LeRobot — github.com">LeRobot</a>, and before comparing it with anything else i ran the exact same command five times, just to see how much the number moves on its own. it came back 87, 90, 87, 87 and 90 percent.</p>
-    <p>same checkpoint, same seed, same GPU, same command. three points is about the size of the gaps people use to rank policies on this benchmark, so i kept pulling on the thread. it took 521 full evaluations (about 53,600 episodes), seven policies, two simulators and two machines before i felt i understood where these numbers come from.</p>
-    <p>this post walks through what i found, with the actual rollout videos. none of it needs a robot, just a GPU and a lot of patience.</p>
-  </div>
-  <figure class="side">
+<p class="opening">this started with a boring check. i had π0.5 running on <a href="https://libero-project.github.io" title="LIBERO — libero-project.github.io">LIBERO</a> through <a href="https://github.com/huggingface/lerobot" title="LeRobot — github.com">LeRobot</a>, and before comparing it with anything else i ran the exact same command five times, just to see how much the number moves on its own. it came back 87, 90, 87, 87 and 90 percent.</p>
+<p>same checkpoint, same seed, same GPU, same command. three points is about the size of the gaps people use to rank policies on this benchmark, so i kept pulling on the thread. it took 521 full evaluations (about 53,600 episodes), seven policies, two simulators and two machines before i felt i understood where these numbers come from.</p>
+<p>this post walks through what i found, with the actual rollout videos. none of it needs a robot, just a GPU and a lot of patience.</p>
+<figure>
     <div class="clips c2" data-group>
       <div class="tile"><video muted playsinline preload="metadata" poster="assets/same_pass.jpg" aria-label="first run: the book goes into the caddy"><source src="assets/same_pass.mp4" type="video/mp4"></video><span class="tag">run 1</span><span class="res" data-out="1">success</span></div>
       <div class="tile"><video muted playsinline preload="metadata" poster="assets/same_fail.jpg" aria-label="third run: the arm keeps fumbling the book"><source src="assets/same_fail.mp4" type="video/mp4"></video><span class="tag">run 3</span><span class="res" data-out="0">failure</span></div>
@@ -172,20 +173,15 @@ footer a { color: var(--muted); }
     <div class="cliptools"><button type="button" data-toggle>pause</button><button type="button" data-restart>replay</button></div>
     <figcaption>the same command, run twice. same weights, seed, machine and stored scene. one run drops the book straight into the caddy, the other keeps fumbling it.<span class="mode">π0 · LIBERO-Long, task 5 · real evaluation videos, half speed</span></figcaption>
   </figure>
-</div>
 
 <h2 id="rerun">same command, different answer</h2>
-<div class="row">
-  <div class="prose">
-    <p>the first suspect was the GPU. by default LeRobot lets cuDNN time a few kernels when it starts and keep whichever is fastest, and some GPU kernels add numbers up in whatever order their threads happen to finish. neither matters much in training. in a closed loop it does: the last digit of an action changes, the arm ends up a hair somewhere else, the next camera frame is a hair different, and a few hundred steps later the gripper closes a few millimetres to the left.</p>
-    <p>between any two of my five runs, 7 to 15 of the 100 episodes changed outcome. switching on deterministic kernels removed that completely. π0.5 scored 91% in all five runs, with not one episode different between any pair, and π0 behaved the same way. SmolVLA happened to repeat exactly even without the switch, and π0-FAST kept one scene that flips no matter what.</p>
-    <p>notice that 91 isn't a better score. without the switch π0.5 averaged 88.2%. determinism freezes one particular draw of the noise, so the number becomes repeatable, but it's still one sample.</p>
-  </div>
-  <figure class="side">
+<p>the first suspect was the GPU. by default LeRobot lets cuDNN time a few kernels when it starts and keep whichever is fastest, and some GPU kernels add numbers up in whatever order their threads happen to finish. neither matters much in training. in a closed loop it does: the last digit of an action changes, the arm ends up a hair somewhere else, the next camera frame is a hair different, and a few hundred steps later the gripper closes a few millimetres to the left.</p>
+<p>between any two of my five runs, 7 to 15 of the 100 episodes changed outcome. switching on deterministic kernels removed that completely. π0.5 scored 91% in all five runs, with not one episode different between any pair, and π0 behaved the same way. SmolVLA happened to repeat exactly even without the switch, and π0-FAST kept one scene that flips no matter what.</p>
+<p>notice that 91 isn't a better score. without the switch π0.5 averaged 88.2%. determinism freezes one particular draw of the noise, so the number becomes repeatable, but it's still one sample.</p>
+<figure>
     <div class="chart" id="ch-repeat"></div>
     <figcaption>π0.5 on LIBERO-Long, the same command five times with the default GPU kernels and five times with deterministic ones. each dot is a full evaluation of 100 episodes.</figcaption>
   </figure>
-</div>
 
 <h2 id="seed">the seed moved the microwave</h2>
 <p>re-runs were the easy part. the stranger thing showed up when i changed the seed.</p>
@@ -204,14 +200,12 @@ footer a { color: var(--muted); }
   <figcaption>one stored scene, seven seeds, and a policy that draws no random numbers. seed 1000 fails and the other six succeed.<span class="mode">π0-FAST · LIBERO-Long, task 9 · the seven videos play in sync</span></figcaption>
 </figure>
 
-<div class="row row-diff">
-  <div class="prose">
-    <p>if the policy has no randomness and the scene comes from a file, what is the seed changing?</p>
-    <p>it took me a while to see it. drag the divider across the microwave in the two first frames: it isn't in the same place.</p>
-    <p>LIBERO's initial-state files store the position and velocity of every joint in the scene: the robot, the mug, the hinges of doors and drawers. the furniture itself (cabinets, stoves, the microwave, the wine rack) is fixed to the table and has no joint. on every hard reset LIBERO places it again with the seeded random generator, and the stored state has no slot to put it back.</p>
-    <p>so the seed moves the furniture, by up to 2.5 cm and typically 1.3 to 1.6 cm. that sounds small, but it's a lot when the task is to catch the edge of a microwave door.</p>
-  </div>
-  <figure class="side">
+<p>if the policy has no randomness and the scene comes from a file, what is the seed changing?</p>
+<p>it took me a while to see it. drag the divider across the microwave in the two first frames: it isn't in the same place.</p>
+<p>LIBERO's initial-state files store the position and velocity of every joint in the scene: the robot, the mug, the hinges of doors and drawers. the furniture itself (cabinets, stoves, the microwave, the wine rack) is fixed to the table and has no joint. on every hard reset LIBERO places it again with the seeded random generator, and the stored state has no slot to put it back.</p>
+<p>so the seed moves the furniture, by up to 2.5 cm and typically 1.3 to 1.6 cm. that sounds small, but it's a lot when the task is to catch the edge of a microwave door.</p>
+<div class="duo">
+  <figure>
     <div class="compare" id="compare" aria-label="first frames under seed 1000 and seed 2000">
       <img src="assets/first_s2000.png" alt="first frame, seed 2000" width="360" height="360">
       <div class="clip"><img src="assets/first_s1000.png" alt="first frame, seed 1000" width="360" height="360"></div>
@@ -221,7 +215,7 @@ footer a { color: var(--muted); }
     </div>
     <figcaption>first frames under seed 1000 and seed 2000. drag across the microwave.</figcaption>
   </figure>
-  <figure class="inset">
+  <figure>
     <div class="tile"><img src="assets/diff_t0.png" alt="pixels that differ between the two first frames" width="720" height="720" loading="lazy"></div>
     <figcaption>pixels that differ between the two first frames, above video-compression noise. only the microwave moved.</figcaption>
   </figure>
@@ -244,13 +238,10 @@ footer a { color: var(--muted); }
 <div class="aside"><p>one twist: LIBERO's own demonstrations were recorded with the furniture in slightly different places too, about as spread out as the seed makes it. so the evaluation scenes aren't out of distribution. the files that are supposed to fix a scene just don't fix all of it.</p></div>
 
 <h2 id="pin">pinning the furniture</h2>
-<div class="row">
-  <div class="prose">
-    <p>the fix is small. i added an opt-in switch that ties the furniture placement to the scene's index instead of the seed, so a stored scene really is one scene.</p>
-    <p>with it, π0.5 scored 90.0% under six different seeds, and no episode changed between any two runs. without it, the same six seeds scored 83 to 87% and about 12 episodes flipped per pair. for π0 and π0-FAST the switch removed the seed's effect completely, and for SmolVLA 96% of it, on a second machine as well.</p>
-    <p>then i tried the obvious follow-up and pinned six other layouts. π0.5 scored anywhere from 85 to 90% depending on which one i picked, and the layouts disagreed on about 11.5 episodes per pair, as many as a fresh seed.</p>
-  </div>
-  <figure class="side">
+<p>the fix is small. i added an opt-in switch that ties the furniture placement to the scene's index instead of the seed, so a stored scene really is one scene.</p>
+<p>with it, π0.5 scored 90.0% under six different seeds, and no episode changed between any two runs. without it, the same six seeds scored 83 to 87% and about 12 episodes flipped per pair. for π0 and π0-FAST the switch removed the seed's effect completely, and for SmolVLA 96% of it, on a second machine as well.</p>
+<p>then i tried the obvious follow-up and pinned six other layouts. π0.5 scored anywhere from 85 to 90% depending on which one i picked, and the layouts disagreed on about 11.5 episodes per pair, as many as a fresh seed.</p>
+<figure class="wide">
     <div class="clips c4" data-group>
       <div class="tile"><video muted playsinline preload="metadata" poster="assets/pinned1000.jpg" aria-label="pinned layout, seed 1000"><source src="assets/pinned1000.mp4" type="video/mp4"></video><span class="tag">1000</span><span class="res" data-out="1">success</span></div>
       <div class="tile"><video muted playsinline preload="metadata" poster="assets/pinned2000.jpg" aria-label="pinned layout, seed 2000"><source src="assets/pinned2000.mp4" type="video/mp4"></video><span class="tag">2000</span><span class="res" data-out="1">success</span></div>
@@ -259,29 +250,21 @@ footer a { color: var(--muted); }
     </div>
     <figcaption>the microwave scene again with the layout pinned, under four seeds. the four videos are identical frame for frame.<span class="mode">π0-FAST · LIBERO-Long, task 9</span></figcaption>
   </figure>
-</div>
 
-<div class="row">
-  <div class="prose">
-    <p>so pinning makes a number reproducible. it doesn't make it the right number, because there is no right layout to pin: LIBERO recorded its 50 demonstrations per task under 50 different layouts.</p>
-    <p>that's the line i kept coming back to. reproducible is not comparable. a pinned score repeats to the decimal, and it still carries an offset nobody knows the sign of.</p>
-  </div>
-  <figure class="side">
+<p>so pinning makes a number reproducible. it doesn't make it the right number, because there is no right layout to pin: LIBERO recorded its 50 demonstrations per task under 50 different layouts.</p>
+<p>that's the line i kept coming back to. reproducible is not comparable. a pinned score repeats to the decimal, and it still carries an offset nobody knows the sign of.</p>
+<figure>
     <div class="chart" id="ch-pin"></div>
     <figcaption>π0.5 on LIBERO-Long, one dot per evaluation: a new seed each run, the layout pinned under six seeds, and six other pinned layouts. every pinned score repeats exactly, and each one is a different number.</figcaption>
   </figure>
-</div>
 
 <h2 id="stack">everything else between the weights and the number</h2>
 <p>once you start looking, every layer between the checkpoint and the success rate has a setting like this. i changed them one at a time.</p>
 
 <h3>settling steps and the MuJoCo version</h3>
-<div class="row">
-  <div class="prose">
-    <p>after every reset LeRobot steps the simulator ten times with a zero action, so objects can settle before the policy looks. in LIBERO-Spatial task 5 the bowl is stored hovering just above a ramekin and is meant to drop onto it. on MuJoCo 3.3.7 it does. on 3.8.1 it ends up leaning off the rim.</p>
-    <p>with 40 settling steps instead of 10, task 5 falls from 92.9% to 62.9% on MuJoCo 3.8.1, and barely moves on 3.3.7 (100% to 98.6%). either change on its own looks harmless; together they cost the task thirty points. there's an open LeRobot issue about the bowl (<a href="https://github.com/huggingface/lerobot/issues/4390" title="lerobot#4390 — github.com">#4390</a>).</p>
-  </div>
-  <figure class="side">
+<p>after every reset LeRobot steps the simulator ten times with a zero action, so objects can settle before the policy looks. in LIBERO-Spatial task 5 the bowl is stored hovering just above a ramekin and is meant to drop onto it. on MuJoCo 3.3.7 it does. on 3.8.1 it ends up leaning off the rim.</p>
+<p>with 40 settling steps instead of 10, task 5 falls from 92.9% to 62.9% on MuJoCo 3.8.1, and barely moves on 3.3.7 (100% to 98.6%). either change on its own looks harmless; together they cost the task thirty points. there's an open LeRobot issue about the bowl (<a href="https://github.com/huggingface/lerobot/issues/4390" title="lerobot#4390 — github.com">#4390</a>).</p>
+<figure class="wide">
     <div class="stills">
       <div class="tile"><img src="assets/settle_mj337_10.jpg" alt="MuJoCo 3.3.7, 10 settling steps: the bowl sits on the ramekin" width="480" height="360" loading="lazy"><span class="tag">3.3.7 · 10 steps</span></div>
       <div class="tile"><img src="assets/settle_mj337_40.jpg" alt="MuJoCo 3.3.7, 40 settling steps: the bowl sits on the ramekin" width="480" height="360" loading="lazy"><span class="tag">3.3.7 · 40 steps</span></div>
@@ -290,39 +273,30 @@ footer a { color: var(--muted); }
     </div>
     <figcaption>the first frame the policy sees, zoomed in on the bowl and ramekin.<span class="mode">LIBERO-Spatial, task 5, stored scene 0</span></figcaption>
   </figure>
-</div>
-<figure class="wide">
-  <div class="chart chart-mid" id="ch-settle"></div>
+<figure>
+  <div class="chart" id="ch-settle"></div>
   <figcaption>π0.5 on LIBERO-Spatial, seven paired seeds per setting. small dots are single runs, large dots their mean.</figcaption>
 </figure>
 
 <h3>chunk length</h3>
-<div class="row">
-  <div class="prose">
-    <p>π0.5 predicts 50 actions at a time, and the evaluator decides how many of them to execute before asking again. LeRobot's LIBERO docs use 10, while the config that ships with the checkpoint says 50. that one number moves π0.5 by 3 to 12 points per suite.</p>
-  </div>
-  <figure class="side">
+<p>π0.5 predicts 50 actions at a time, and the evaluator decides how many of them to execute before asking again. LeRobot's LIBERO docs use 10, while the config that ships with the checkpoint says 50. that one number moves π0.5 by 3 to 12 points per suite.</p>
+<figure>
     <div class="clips c2" data-group>
       <div class="tile"><video muted playsinline preload="metadata" poster="assets/chunk10.jpg" aria-label="10 actions per chunk"><source src="assets/chunk10.mp4" type="video/mp4"></video><span class="tag">10 per chunk</span><span class="res" data-out="1">success</span></div>
       <div class="tile"><video muted playsinline preload="metadata" poster="assets/chunk50.jpg" aria-label="50 actions per chunk"><source src="assets/chunk50.mp4" type="video/mp4"></video><span class="tag">50 per chunk</span><span class="res" data-out="0">failure</span></div>
     </div>
     <figcaption>same scene and seed. executing 10 actions per chunk, π0.5 takes the bowl from the drawer and puts it on the plate. executing all 50, it fails.<span class="mode">π0.5 · LIBERO-Spatial, task 4 · half speed</span></figcaption>
   </figure>
-</div>
 
 <h3>how the harness seeds things</h3>
 <p>openpi and LeRobot seed the same LIBERO simulator in different ways. running π0.5 both ways with everything else equal changed 12 to 13 of 100 outcomes, close to what a new seed changes (14 to 17).</p>
 
 <h3>the renderer</h3>
-<div class="row">
-  <div class="prose">
-    <p>on SimplerEnv's WidowX tasks, rendering on the CPU instead of the GPU dropped Qwen3-VL-GR00T from 60.1% to 46.6% over seven repeats each. X-VLA didn't move. same tasks, same weights; one policy is just more sensitive to small rendering differences than the other.</p>
-  </div>
-  <figure class="side">
+<p>on SimplerEnv's WidowX tasks, rendering on the CPU instead of the GPU dropped Qwen3-VL-GR00T from 60.1% to 46.6% over seven repeats each. X-VLA didn't move. same tasks, same weights; one policy is just more sensitive to small rendering differences than the other.</p>
+<figure>
     <div class="chart" id="ch-render"></div>
     <figcaption>seven repeats of 96 episodes per renderer. the dashed line is the score reported by the <a href="https://arxiv.org/abs/2603.13966" title="vla-eval: a unified evaluation harness for VLA models — arxiv.org">vla-eval</a> reproduction, which renders on the GPU.</figcaption>
   </figure>
-</div>
 
 <h3>the GPU itself</h3>
 <p>last, the machine. i ran SmolVLA on an RTX 4090 and an RTX 3060 with identical software. the averages agree (−0.4 points). but even with CPU rendering, where both machines produce pixel-identical frames, 22 to 32 episodes per seed came out differently. the policy's arithmetic isn't exactly the same on two GPUs, so the rollouts aren't either.</p>
@@ -399,7 +373,7 @@ footer a { color: var(--muted); }
   }
   function dots(host, groups, o) {
     const W = host.clientWidth, H = o.h || 250, s = svgIn(host, W, H, o.label);
-    const left = 46, right = W - 6, top = 10, bot = H - (o.bottom || 44), y = lin(o.y0, o.y1, bot, top);
+    const left = 46, right = W - 6, top = 10, bot = H - (o.bottom || 32), y = lin(o.y0, o.y1, bot, top);
     yAxis(s, y, o.ticks, v => v + '%', left, right, o.ylab, (top + bot) / 2);
     const gw = (right - left) / groups.length;
     groups.forEach((g, i) => {
@@ -420,7 +394,7 @@ footer a { color: var(--muted); }
     dots(document.getElementById('ch-repeat'), [
       { name: 'default kernels', vals: R.off.rates, col: C.fail, tips: R.off.rates.map((v, i) => `run ${i + 1}, default kernels · ${v.toFixed(0)}%`) },
       { name: 'deterministic', vals: R.on.rates, col: C.pass, tips: R.on.rates.map((v, i) => `run ${i + 1}, deterministic kernels · ${v.toFixed(0)}%`) },
-    ], { y0: 84, y1: 93, ticks: [84, 86, 88, 90, 92], ylab: 'success', label: 'Five repeats of the same command, with and without deterministic kernels', h: 230 });
+    ], { y0: 84, y1: 93, ticks: [84, 86, 88, 90, 92], ylab: 'success', label: 'Five repeats of the same command, with and without deterministic kernels', h: 214 });
   }
   function drawPin() {
     const P = D.pin;
@@ -428,7 +402,7 @@ footer a { color: var(--muted); }
       { name: 'new seed\neach run', vals: P.unpinned, col: C.fail, tips: P.unpinned.map(v => `new seed · ${v.toFixed(0)}%`) },
       { name: 'one layout\nsix seeds', vals: P.pinned, col: C.pass, tips: P.pinned.map(v => `pinned layout · ${v.toFixed(0)}%`) },
       { name: 'six other\nlayouts', vals: P.layouts, col: C.pass, square: true, tips: P.layouts.map(v => `one pinned layout · ${v.toFixed(0)}%`) },
-    ], { y0: 82, y1: 91, ticks: [82, 84, 86, 88, 90], ylab: 'success', label: 'Pinning the layout: success per evaluation', h: 250, bottom: 52 });
+    ], { y0: 82, y1: 91, ticks: [82, 84, 86, 88, 90], ylab: 'success', label: 'Pinning the layout: success per evaluation', h: 240, bottom: 42 });
   }
   function drawRender() {
     const S = D.simpler, g = [];
@@ -437,11 +411,11 @@ footer a { color: var(--muted); }
       g.push({ name: `${nm}\nGPU`, vals: p.gpu, col: C.pass, ref: p.reported, tips: p.gpu.map(v => `${p.policy}, GPU rendering · ${f1(v)}%`) });
       g.push({ name: `${nm}\nCPU`, vals: p.cpu, col: C.fail, ref: p.reported, tips: p.cpu.map(v => `${p.policy}, CPU rendering · ${f1(v)}%`) });
     });
-    dots(document.getElementById('ch-render'), g, { y0: 40, y1: 100, ticks: [40, 60, 80, 100], ylab: 'success', label: 'SimplerEnv success with GPU and CPU rendering', h: 250, bottom: 52 });
+    dots(document.getElementById('ch-render'), g, { y0: 40, y1: 100, ticks: [40, 60, 80, 100], ylab: 'success', label: 'SimplerEnv success with GPU and CPU rendering', h: 240, bottom: 42 });
   }
   function drawSettle() {
     const host = document.getElementById('ch-settle'), W = host.clientWidth, S = D.settling, narrow = W < 560;
-    const pw = narrow ? W : (W - 30) / 2, ph = 240, H = narrow ? ph * 2 + 24 : ph, s = svgIn(host, W, H, 'Settling steps and MuJoCo version');
+    const pw = narrow ? W : (W - 30) / 2, ph = narrow ? 210 : 240, H = narrow ? ph * 2 + 24 : ph, s = svgIn(host, W, H, 'Settling steps and MuJoCo version');
     [['task5', 'task 5 (the bowl)'], ['others', 'the other nine tasks']].forEach(([part, name], i) => {
       const ox = narrow ? 0 : i * (pw + 30), oy = narrow ? i * (ph + 24) : 0, left = ox + 46, right = ox + pw - 70, top = oy + 26, bot = oy + ph - 32;
       const y = lin(40, 100, bot, top), x = lin(0, 1, left + (right - left) * .2, right - (right - left) * .15);
