@@ -60,17 +60,61 @@ p { font-size: 18px; line-height: 1.65; margin: 0 0 17px; }
 em { font-style: italic; }
 sup { font-size: 11px; }
 
-/* one centred reading column; figures sit in the flow, wide ones step out to 960px */
-.page article > * { max-width: 680px; margin-left: auto; margin-right: auto; }
-.page article > .wide { max-width: 960px; }
-.top, footer { max-width: 680px; margin-left: auto; margin-right: auto; }
+/* layout. phones and tablets: one 700px column, wide figures up to 1000px.
+   from 1000px: the writing column plus a right margin that holds figure captions and side notes;
+   wide figures span both. from 1240px: a sticky contents list on the left as well. */
+.page article > * { max-width: 700px; margin-left: auto; margin-right: auto; }
+.page article > .wide, .page article > .duo { max-width: 1000px; }
+.top, footer { max-width: 700px; margin-left: auto; margin-right: auto; }
 .opening { margin-top: 30px; }
+.toc { display: none; }
 
 figure { margin: 26px 0 34px; min-width: 0; }
-figcaption { color: var(--muted); font-size: 14.5px; line-height: 1.5; margin-top: 10px; max-width: 640px; }
+figcaption { color: var(--muted); font-size: 14.5px; line-height: 1.5; margin-top: 10px; max-width: 700px; }
 figcaption .mode { display: block; margin-top: 4px; font-size: 12.5px; letter-spacing: .2px; }
 .wide { margin-top: 30px; margin-bottom: 38px; }
-.wide > figcaption, .wide > .cliptools { max-width: 680px; margin-left: auto; margin-right: auto; }
+.wide > figcaption, .wide > .cliptools { max-width: 700px; margin-left: auto; margin-right: auto; }
+
+@media (min-width: 1000px) {
+  .top, footer { max-width: 1100px; }
+  .page article { display: grid; grid-template-columns: minmax(0, 700px) minmax(220px, 1fr); column-gap: 48px; max-width: 1100px; margin: 0 auto; }
+  .page article > * { grid-column: 1; max-width: none; margin-left: 0; margin-right: 0; }
+  .page article > h1, .page article > .wide, .page article > .duo { grid-column: 1 / -1; }
+  /* grid items don't collapse margins, so everything after a paragraph loses the paragraph's 17px */
+  .page article > h2 { margin-top: 45px; }
+  .page article > h3 { margin-top: 23px; }
+  .page article > figure { margin-top: 9px; }
+  .page article > .wide { margin-top: 13px; }
+  .page article > .duo { margin-top: 9px; }
+  .page article > .tests { margin-top: 3px; }
+  .page article > .advice { margin-top: 5px; }
+  .page article > details { margin-top: 27px; }
+  .page article > .opening { margin-top: 22px; }
+  .wide > figcaption, .wide > .cliptools { margin-left: 0; }
+  /* plain figures: the picture in the writing column, its caption beside it in the margin */
+  .page article > figure:not(.wide) { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: start; }
+  .page article > figure:not(.wide) > * { grid-column: 1; }
+  .page article > figure:not(.wide) > figcaption { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; padding-top: 2px; }
+  /* a paragraph with a side note in the margin */
+  .page article > .noted { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: start; }
+  .noted > p { grid-column: 1; }
+  .noted > .aside { grid-column: 2; margin: 0; padding-left: 14px; }
+  .noted > .aside p { font-size: 15px; line-height: 1.55; margin: 0; }
+}
+@media (min-width: 1240px) {
+  .page { max-width: 1340px; }
+  .top, footer { max-width: none; }
+  .layout { display: grid; grid-template-columns: 188px minmax(0, 1fr); column-gap: 56px; }
+  .page .layout article { max-width: none; margin: 0; }
+  .toc { display: block; }
+  .toc nav { position: sticky; top: 36px; padding-top: 14px; }
+  .toc .toc-h { font-size: 12.5px; letter-spacing: .8px; color: var(--muted); margin: 0 0 12px; }
+  .toc ol { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 0; }
+  .toc a { display: block; font-size: 14px; line-height: 1.35; color: var(--muted); text-decoration: none; padding: 5px 0 5px 12px; border-left: 2px solid var(--rule); }
+  .toc a:hover { color: var(--ink); }
+  .toc a[aria-current="true"] { color: var(--ink); border-left-color: var(--ink); }
+}
 
 /* clips: plain frames, a result label when a clip ends */
 .clips { display: grid; gap: 6px; }
@@ -159,6 +203,20 @@ footer a { color: var(--muted); }
   <span class="note">notes on robot evaluation</span>
 </header>
 
+<div class="layout">
+<aside class="toc" aria-label="contents"><nav>
+  <p class="toc-h">contents</p>
+  <ol>
+    <li><a href="#rerun">same command, different answer</a></li>
+    <li><a href="#seed">the seed moved the microwave</a></li>
+    <li><a href="#proof">checking that it really is the furniture</a></li>
+    <li><a href="#pin">pinning the furniture</a></li>
+    <li><a href="#stack">everything else between the weights and the number</a></li>
+    <li><a href="#floor">how small a gap can you trust?</a></li>
+    <li><a href="#advice">what i'd tell anyone running sim evals</a></li>
+    <li><a href="#setup">how i ran everything</a></li>
+  </ol>
+</nav></aside>
 <main id="story">
 <article>
 <h1>the seed moved the microwave</h1>
@@ -237,8 +295,10 @@ footer a { color: var(--muted); }
   <li><b>swap the furniture.</b> copying one seed's fixture poses into the other seed's model made five of five runs bit-identical again.</li>
   <li><b>human demonstrations.</b> replayed under 20 seeds, 26 of LIBERO's 50 recorded demos changed outcome in a task with a moving cabinet. in a task where the seed moves nothing, none did.</li>
 </ul>
+<div class="noted">
 <p>i wasn't the first to bump into this. a version of it was reported on the OpenVLA repo (<a href="https://github.com/openvla/openvla/issues/342" title="openvla#342 — github.com">issue #342</a>), where the fixtures weren't restored when one environment was reused across episodes. what i added is tracing it all the way down to the physics and measuring what it does to scores.</p>
 <div class="aside"><p>one twist: LIBERO's own demonstrations were recorded with the furniture in slightly different places too, about as spread out as the seed makes it. so the evaluation scenes aren't out of distribution. the files that are supposed to fix a scene just don't fix all of it.</p></div>
+</div>
 
 <h2 id="pin">pinning the furniture</h2>
 <p>the fix is small. i added an opt-in switch that ties the furniture placement to the scene's index instead of the seed, so a stored scene really is one scene.</p>
@@ -318,7 +378,7 @@ footer a { color: var(--muted); }
 
 <p>none of this is a bug in the usual sense. every choice above is reasonable on its own. a simulated success rate just measures the policy together with everything that ran it, and most of that never makes it into a paper. i'm turning my switches into small pull requests for LeRobot, so that at least these settings are easy to set and easy to record.</p>
 
-<details>
+<details id="setup">
   <summary>how i ran everything</summary>
   <dl>
     <dt>policies</dt><dd>π0, π0.5, π0-FAST, SmolVLA and MolmoAct2 on LIBERO, using LeRobot's checkpoints. X-VLA and Qwen3-VL-GR00T on SimplerEnv's WidowX tasks through vla-eval. π0-FAST decodes greedily; the others sample noise at every call.</dd>
@@ -329,6 +389,7 @@ footer a { color: var(--muted); }
 </details>
 </article>
 </main>
+</div>
 
 <footer>
   <span>sahil apage · vjti, mumbai</span>
@@ -516,6 +577,21 @@ footer a { color: var(--muted); }
     cmp.addEventListener('pointerup', () => { drag = false; });
     range.addEventListener('input', () => set(+range.value));
   }
+  /* contents: mark the section being read; the last entry opens the setup notes */
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  const secs = tocLinks.map(a => document.getElementById(a.getAttribute('href').slice(1)));
+  let tocTick = false;
+  const markToc = () => {
+    tocTick = false;
+    let cur = -1;
+    secs.forEach((sec, i) => { if (sec && sec.getBoundingClientRect().top < innerHeight * .35) cur = i; });
+    if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) cur = secs.length - 1;
+    tocLinks.forEach((a, i) => { if (i === cur) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+  };
+  addEventListener('scroll', () => { if (!tocTick) { tocTick = true; requestAnimationFrame(markToc); } }, { passive: true });
+  markToc();
+  const setup = document.getElementById('setup');
+  tocLinks.forEach(a => a.addEventListener('click', () => { if (a.getAttribute('href') === '#setup' && setup) setup.open = true; }));
 })();
 </script>
 </body>
